@@ -1,15 +1,10 @@
-import { View } from "react-native";
+import React from 'react';
+import { AppRegistry, Text, View } from 'react-native';
 
-export default function Index() {
-  return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 20,
-      }}
-    >
-    </View>
-  );
-}
+const App = () => (
+  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+    <Text>Hello!</Text>
+  </View>
+);
+
+export default App;
