@@ -20,5 +20,7 @@ export function GoogleSignInButton() {
     }
   }, [])
 
-  return <Button title="Sign in with Google" onPress={onPress} />
+  return (
+    <Button title="Sign in with Google" onPress={onPress} />
+  )
 }
