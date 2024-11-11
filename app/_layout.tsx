@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import { ClerkProvider, ClerkLoaded, ClerkLoading } from '@clerk/clerk-expo'
 import { Slot } from 'expo-router'
 import { Provider as PaperProvider } from 'react-native-paper'

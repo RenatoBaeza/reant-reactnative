@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useUser } from '@clerk/clerk-expo'
-import { StyleSheet, View, ScrollView, Pressable } from 'react-native'
-import { Text, Surface, Button, IconButton, useTheme, TextInput } from 'react-native-paper'
-import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated'
+import { StyleSheet, View, KeyboardAvoidingView, Platform, ScrollView, KeyboardAvoidingViewProps, Pressable } from 'react-native'
+import { Text, Surface, IconButton, useTheme } from 'react-native-paper'
+import Animated, { FadeInUp } from 'react-native-reanimated'
 import { ProfileSidebar } from '../../components/ProfileSidebar';
 import { useURL } from 'expo-linking'
 import { useRouter } from 'expo-router';
 import { Map } from '../../components/Map';
+import { DriverForm } from '../../components/DriverForm';
+import { PassengerForm } from '../../components/PassengerForm';
+import { Header } from '../../components/Header';
 
 export default function Home() {
   const { user } = useUser()
@@ -14,16 +17,24 @@ export default function Home() {
   const [selectedMode, setSelectedMode] = useState<'driver' | 'passenger' | null>(null)
   const [driverForm, setDriverForm] = useState({
     origin: '',
+    originPlaceId: '',
+    originLocation: null,
     destination: '',
+    destinationPlaceId: '',
+    destinationLocation: null,
     date: '',
     time: ''
-  })
+  });
   
   const [passengerForm, setPassengerForm] = useState({
     origin: '',
+    originPlaceId: '',
+    originLocation: null,
     destination: '',
+    destinationPlaceId: '',
+    destinationLocation: null,
     date: ''
-  })
+  });
 
   const [isSidebarVisible, setIsSidebarVisible] = useState(false)
 
@@ -50,154 +61,95 @@ export default function Home() {
     handleURLCallback()
   }, [url, handleURLCallback])
 
+  // Determine the keyboard avoiding behavior based on platform
+  const keyboardBehavior: KeyboardAvoidingViewProps['behavior'] = 
+    Platform.OS === 'ios' ? 'padding' : 'height';
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Header */}
-      <Animated.View entering={FadeInDown} style={styles.header}>
-        <View style={styles.headerContent}>
-          <View>
-            <Text variant="titleMedium">Good Morning</Text>
-            <Text variant="titleLarge">{user?.firstName}</Text>
-          </View>
-          <IconButton
-            icon="account-circle"
-            size={40}
-            onPress={handleProfilePress}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            style={{ padding: 8 }}
+    <KeyboardAvoidingView 
+      behavior={keyboardBehavior}
+      style={styles.container}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
+    >
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Header 
+          userName={user?.firstName}
+          onProfilePress={handleProfilePress}
+        />
+
+        {/* Services Grid */}
+        <Animated.View 
+          entering={FadeInUp.delay(400)}
+          style={styles.servicesGrid}
+        >
+          <Pressable onPress={() => handleModeSelect('passenger')}>
+            <Surface 
+              style={[
+                styles.serviceItem, 
+                selectedMode === 'passenger' ? styles.selectedService : 
+                selectedMode === 'driver' ? styles.disabledService : null
+              ]}
+            >
+              <IconButton 
+                icon="seat-passenger" 
+                size={32}
+              />
+              <Text variant="labelLarge">Passenger</Text>
+            </Surface>
+          </Pressable>
+          
+          <Pressable onPress={() => handleModeSelect('driver')}>
+            <Surface 
+              style={[
+                styles.serviceItem,
+                selectedMode === 'driver' ? styles.selectedService : 
+                selectedMode === 'passenger' ? styles.disabledService : null
+              ]}
+            >
+              <IconButton 
+                icon="car" 
+                size={32}
+              />
+              <Text variant="labelLarge">Driver</Text>
+            </Surface>
+          </Pressable>
+        </Animated.View>
+
+        {/* Map */}
+        <Animated.View 
+          entering={FadeInUp.delay(300)}
+          style={styles.mapContainer}
+        >
+          <Map />
+        </Animated.View>
+
+        {/* Forms */}
+        {selectedMode === 'passenger' && (
+          <PassengerForm 
+            form={passengerForm}
+            onFormChange={setPassengerForm}
           />
-        </View>
-      </Animated.View>
+        )}
 
-      {/* Services Grid */}
-      <Animated.View 
-        entering={FadeInUp.delay(400)}
-        style={styles.servicesGrid}
-      >
-        <Pressable onPress={() => handleModeSelect('passenger')}>
-          <Surface 
-            style={[
-              styles.serviceItem, 
-              selectedMode === 'passenger' ? styles.selectedService : 
-              selectedMode === 'driver' ? styles.disabledService : null
-            ]}
-          >
-            <IconButton 
-              icon="seat-passenger" 
-              size={32}
-            />
-            <Text variant="labelLarge">Passenger</Text>
-          </Surface>
-        </Pressable>
-        
-        <Pressable onPress={() => handleModeSelect('driver')}>
-          <Surface 
-            style={[
-              styles.serviceItem,
-              selectedMode === 'driver' ? styles.selectedService : 
-              selectedMode === 'passenger' ? styles.disabledService : null
-            ]}
-          >
-            <IconButton 
-              icon="car" 
-              size={32}
-            />
-            <Text variant="labelLarge">Driver</Text>
-          </Surface>
-        </Pressable>
-      </Animated.View>
-
-      {/* Map */}
-      <Animated.View 
-        entering={FadeInUp.delay(300)}
-        style={styles.mapContainer}
-      >
-        <Map />
-      </Animated.View>
-
-      {/* Passenger Form */}
-      {selectedMode === 'passenger' && (
-        <Animated.View 
-          entering={FadeInUp.delay(200)}
-          style={styles.formContainer}
-        >
-          <Surface style={styles.form}>
-            <TextInput
-              mode="outlined"
-              label="Origin"
-              value={passengerForm.origin}
-              onChangeText={(text) => setPassengerForm(prev => ({ ...prev, origin: text }))}
-              style={styles.input}
-            />
-            <TextInput
-              mode="outlined"
-              label="Destination"
-              value={passengerForm.destination}
-              onChangeText={(text) => setPassengerForm(prev => ({ ...prev, destination: text }))}
-              style={styles.input}
-            />
-            <TextInput
-              mode="outlined"
-              label="Date"
-              value={passengerForm.date}
-              onChangeText={(text) => setPassengerForm(prev => ({ ...prev, date: text }))}
-              style={styles.input}
-            />
-            <Button mode="contained" style={styles.submitButton}>
-              Search Rides
-            </Button>
-          </Surface>
-        </Animated.View>
-      )}
-
-      {/* Driver Form */}
-      {selectedMode === 'driver' && (
-        <Animated.View 
-          entering={FadeInUp.delay(200)}
-          style={styles.formContainer}
-        >
-          <Surface style={styles.form}>
-            <TextInput
-              mode="outlined"
-              label="Origin"
-              value={driverForm.origin}
-              onChangeText={(text) => setDriverForm(prev => ({ ...prev, origin: text }))}
-              style={styles.input}
-            />
-            <TextInput
-              mode="outlined"
-              label="Destination"
-              value={driverForm.destination}
-              onChangeText={(text) => setDriverForm(prev => ({ ...prev, destination: text }))}
-              style={styles.input}
-            />
-            <TextInput
-              mode="outlined"
-              label="Date"
-              value={driverForm.date}
-              onChangeText={(text) => setDriverForm(prev => ({ ...prev, date: text }))}
-              style={styles.input}
-            />
-            <TextInput
-              mode="outlined"
-              label="Time"
-              value={driverForm.time}
-              onChangeText={(text) => setDriverForm(prev => ({ ...prev, time: text }))}
-              style={styles.input}
-            />
-            <Button mode="contained" style={styles.submitButton}>
-              Submit
-            </Button>
-          </Surface>
-        </Animated.View>
-      )}
+        {selectedMode === 'driver' && (
+          <DriverForm 
+            form={driverForm}
+            onFormChange={setDriverForm}
+          />
+        )}
+      </ScrollView>
 
       <ProfileSidebar
         visible={isSidebarVisible}
         onDismiss={() => setIsSidebarVisible(false)}
         userName={user?.firstName ?? ''}
       />
-    </ScrollView>
+    </KeyboardAvoidingView>
   )
 }
 
@@ -206,14 +158,12 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  header: {
-    padding: 16,
-    backgroundColor: '#fff',
+  scrollView: {
+    flex: 1,
   },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 24, // Add some padding at the bottom
   },
   servicesGrid: {
     flexDirection: 'row',
