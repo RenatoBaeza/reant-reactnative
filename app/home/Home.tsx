@@ -6,6 +6,7 @@ import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated'
 import { ProfileSidebar } from '../../components/ProfileSidebar';
 import { useURL } from 'expo-linking'
 import { useRouter } from 'expo-router';
+import { Map } from '../../components/Map';
 
 export default function Home() {
   const { user } = useUser()
@@ -104,6 +105,14 @@ export default function Home() {
             <Text variant="labelLarge">Driver</Text>
           </Surface>
         </Pressable>
+      </Animated.View>
+
+      {/* Map */}
+      <Animated.View 
+        entering={FadeInUp.delay(300)}
+        style={styles.mapContainer}
+      >
+        <Map />
       </Animated.View>
 
       {/* Passenger Form */}
@@ -240,5 +249,8 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: 8,
-  }
+  },
+  mapContainer: {
+    padding: 16,
+  },
 })
