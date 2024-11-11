@@ -1,7 +1,7 @@
 // index.tsx
 import { Link } from 'expo-router';
 import { View, StyleSheet, Dimensions, Pressable } from 'react-native';
-import { Text, Surface, Button, useTheme } from 'react-native-paper';
+import { Text, Surface, useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
@@ -17,7 +17,7 @@ export default function Registration() {
         entering={FadeInDown.delay(200)} 
         style={styles.header}
       >
-        <Text variant="displaySmall" style={styles.title}>Welcome to Reant</Text>
+        <Text variant="displaySmall" style={styles.title}>Welcome to DriveSafe</Text>
         <Text variant="bodyLarge" style={styles.subtitle}>Your journey starts here</Text>
       </Animated.View>
 

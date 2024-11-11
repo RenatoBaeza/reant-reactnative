@@ -2,6 +2,7 @@ import React from 'react'
 import { StyleSheet, View } from 'react-native'
 import { Drawer, Text, IconButton, useTheme } from 'react-native-paper'
 import { Modal, Portal } from 'react-native-paper'
+import { useAuth } from '@clerk/clerk-expo'
 
 interface ProfileSidebarProps {
   visible: boolean
@@ -20,6 +21,15 @@ export function ProfileSidebar({ visible, onDismiss, userName }: ProfileSidebarP
     { icon: 'ticket-percent', label: 'Promotional Codes' },
     { icon: 'account-multiple-plus', label: 'Refer a Friend' },
   ]
+
+  const { signOut } = useAuth()
+  const handleSignOut = async () => {
+    try {
+      await signOut()
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
+  }
 
   return (
     <Portal>
@@ -52,6 +62,16 @@ export function ProfileSidebar({ visible, onDismiss, userName }: ProfileSidebarP
                 style={styles.menuItem}
               />
             ))}
+            
+            {/* Logout Button */}
+            <View style={styles.logoutContainer}>
+              <Drawer.Item
+                icon="logout"
+                label="Log Out"
+                onPress={() => handleSignOut()}
+                style={[styles.menuItem, styles.logoutButton]}
+              />
+            </View>
           </View>
         </View>
       </Modal>
@@ -88,5 +108,13 @@ const styles = StyleSheet.create({
   },
   menuItem: {
     paddingVertical: 4,
+  },
+  logoutContainer: {
+    marginTop: 'auto',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
+  logoutButton: {
+    paddingVertical: 8,
   },
 })

@@ -1,14 +1,14 @@
-import { useState } from 'react'
-import { useUser, useAuth } from '@clerk/clerk-expo'
+import { useState, useEffect, useCallback } from 'react'
+import { useUser } from '@clerk/clerk-expo'
 import { StyleSheet, View, ScrollView, Pressable } from 'react-native'
 import { Text, Surface, Button, IconButton, useTheme, TextInput } from 'react-native-paper'
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated'
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ProfileSidebar } from '../../components/ProfileSidebar';
+import { useURL } from 'expo-linking'
+import { useRouter } from 'expo-router';
 
 export default function Home() {
   const { user } = useUser()
-  const { signOut } = useAuth()
   const theme = useTheme()
   const [selectedMode, setSelectedMode] = useState<'driver' | 'passenger' | null>(null)
   const [driverForm, setDriverForm] = useState({
@@ -17,20 +17,14 @@ export default function Home() {
     date: '',
     time: ''
   })
+  
   const [passengerForm, setPassengerForm] = useState({
     origin: '',
     destination: '',
     date: ''
   })
-  const [isSidebarVisible, setIsSidebarVisible] = useState(false)
 
-  const handleSignOut = async () => {
-    try {
-      await signOut()
-    } catch (error) {
-      console.error('Error signing out:', error)
-    }
-  }
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false)
 
   const handleModeSelect = (mode: 'driver' | 'passenger') => {
     setSelectedMode(mode)
@@ -39,6 +33,21 @@ export default function Home() {
   const handleProfilePress = () => {
     setIsSidebarVisible(true)
   }
+
+  const url = useURL();
+  const router = useRouter();
+
+  const handleURLCallback = useCallback(() => {
+    if (url?.includes('oauth-native-callback')) {
+      router.replace('/')
+      return true
+    }
+    return false
+  }, [url, router])
+
+  useEffect(() => {
+    handleURLCallback()
+  }, [url, handleURLCallback])
 
   return (
     <ScrollView style={styles.container}>
