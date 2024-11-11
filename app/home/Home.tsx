@@ -111,24 +111,16 @@ export default function Home() {
                 selectedMode === 'passenger' ? styles.disabledService : null
               ]}
             >
-              <IconButton 
-                icon="car" 
-                size={32}
-              />
+              <IconButton icon="car" size={32} />
               <Text variant="labelLarge">Driver</Text>
             </Surface>
           </Pressable>
         </Animated.View>
 
-        {/* Map */}
-        <Animated.View 
-          entering={FadeInUp.delay(300)}
-          style={styles.mapContainer}
-        >
+        <Animated.View entering={FadeInUp.delay(300)} style={styles.mapContainer}>
           <Map />
         </Animated.View>
 
-        {/* Forms */}
         {selectedMode === 'passenger' && (
           <PassengerForm 
             form={passengerForm}
@@ -149,6 +141,7 @@ export default function Home() {
         onDismiss={() => setIsSidebarVisible(false)}
         userName={user?.firstName ?? ''}
       />
+
     </KeyboardAvoidingView>
   )
 }
