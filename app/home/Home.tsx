@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { useUser, useAuth } from '@clerk/clerk-expo'
 import { StyleSheet, View, ScrollView, Pressable } from 'react-native'
 import { Text, Surface, Button, IconButton, useTheme, TextInput } from 'react-native-paper'
-import { MaterialCommunityIcons } from '@expo/vector-icons'
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated'
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ProfileSidebar } from '../../components/ProfileSidebar';
 
-export default function Page() {
+export default function Home() {
   const { user } = useUser()
   const { signOut } = useAuth()
   const theme = useTheme()
@@ -21,6 +22,7 @@ export default function Page() {
     destination: '',
     date: ''
   })
+  const [isSidebarVisible, setIsSidebarVisible] = useState(false)
 
   const handleSignOut = async () => {
     try {
@@ -32,6 +34,10 @@ export default function Page() {
 
   const handleModeSelect = (mode: 'driver' | 'passenger') => {
     setSelectedMode(mode)
+  }
+
+  const handleProfilePress = () => {
+    setIsSidebarVisible(true)
   }
 
   return (
@@ -46,7 +52,7 @@ export default function Page() {
           <IconButton
             icon="account-circle"
             size={40}
-            onPress={handleSignOut}
+            onPress={handleProfilePress}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             style={{ padding: 8 }}
           />
@@ -167,6 +173,12 @@ export default function Page() {
           </Surface>
         </Animated.View>
       )}
+
+      <ProfileSidebar
+        visible={isSidebarVisible}
+        onDismiss={() => setIsSidebarVisible(false)}
+        userName={user?.firstName ?? ''}
+      />
     </ScrollView>
   )
 }
