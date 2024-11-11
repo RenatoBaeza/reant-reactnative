@@ -6,7 +6,7 @@ import Registration from './auth/Registration'
 
 export default function Page() {
   return (
-    <View>
+    <View style={{ flex: 1 }}>
       <SignedIn>
         <Home/>
       </SignedIn>

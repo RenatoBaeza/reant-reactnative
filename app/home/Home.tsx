@@ -30,6 +30,8 @@ export default function Page() {
             icon="account-circle"
             size={40}
             onPress={handleSignOut}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={{ padding: 8 }}
           />
         </View>
       </Animated.View>
@@ -60,28 +62,8 @@ export default function Page() {
           <Text variant="labelLarge">Food</Text>
         </Surface>
         
-        <Surface style={styles.serviceItem}>
-          <IconButton icon="package" size={32} />
-          <Text variant="labelLarge">Package</Text>
-        </Surface>
-        
-        <Surface style={styles.serviceItem}>
-          <IconButton icon="bike" size={32} />
-          <Text variant="labelLarge">Rent</Text>
-        </Surface>
       </Animated.View>
 
-      {/* Recent Trips */}
-      <Animated.View entering={FadeInUp.delay(600)}>
-        <Text variant="titleMedium" style={styles.sectionTitle}>Recent Trips</Text>
-        <Surface style={styles.recentTrip}>
-          <MaterialCommunityIcons name="map-marker" size={24} color={theme.colors.primary} />
-          <View style={styles.tripDetails}>
-            <Text variant="bodyLarge">Downtown Station</Text>
-            <Text variant="bodyMedium" style={styles.tripDate}>March 15, 2024</Text>
-          </View>
-        </Surface>
-      </Animated.View>
     </ScrollView>
   )
 }

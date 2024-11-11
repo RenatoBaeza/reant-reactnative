@@ -1,7 +1,9 @@
 import * as WebBrowser from 'expo-web-browser'
 import { useOAuth } from '@clerk/clerk-expo'
-import { Button } from 'react-native'
+import { StyleSheet, Platform } from 'react-native'
+import { Button, Surface } from 'react-native-paper'
 import { useCallback } from 'react'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 
 WebBrowser.maybeCompleteAuthSession()
 
@@ -21,6 +23,33 @@ export function GoogleSignInButton() {
   }, [])
 
   return (
-    <Button title="Sign in with Google" onPress={onPress} />
+    <Surface style={styles.surface} elevation={2}>
+      <Button 
+        mode="outlined"
+        onPress={onPress}
+        style={styles.button}
+        contentStyle={styles.buttonContent}
+        icon={() => <MaterialCommunityIcons name="google" size={24} />}
+      >
+        Sign in with Google
+      </Button>
+    </Surface>
   )
 }
+
+const styles = StyleSheet.create({
+  surface: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  button: {
+    borderRadius: 8,
+    minHeight: 48,
+  },
+  buttonContent: {
+    paddingVertical: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+})
