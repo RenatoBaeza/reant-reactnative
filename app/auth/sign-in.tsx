@@ -41,10 +41,7 @@ export default function Page() {
     }
   }, [isLoaded, emailAddress, password]);
 
-  const Container = Platform.select({
-    web: View,
-    default: Animated.View,
-  });
+  const Container = Platform.OS === 'web' ? View : Animated.View;
 
   return (
     <Container style={styles.container}>

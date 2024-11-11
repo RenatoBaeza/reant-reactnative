@@ -1,6 +1,7 @@
+import { useState } from 'react'
 import { useUser, useAuth } from '@clerk/clerk-expo'
-import { StyleSheet, View, ScrollView } from 'react-native'
-import { Text, Surface, Button, IconButton, useTheme } from 'react-native-paper'
+import { StyleSheet, View, ScrollView, Pressable } from 'react-native'
+import { Text, Surface, Button, IconButton, useTheme, TextInput } from 'react-native-paper'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated'
 
@@ -8,6 +9,18 @@ export default function Page() {
   const { user } = useUser()
   const { signOut } = useAuth()
   const theme = useTheme()
+  const [selectedMode, setSelectedMode] = useState<'driver' | 'passenger' | null>(null)
+  const [driverForm, setDriverForm] = useState({
+    origin: '',
+    destination: '',
+    date: '',
+    time: ''
+  })
+  const [passengerForm, setPassengerForm] = useState({
+    origin: '',
+    destination: '',
+    date: ''
+  })
 
   const handleSignOut = async () => {
     try {
@@ -15,6 +28,10 @@ export default function Page() {
     } catch (error) {
       console.error('Error signing out:', error)
     }
+  }
+
+  const handleModeSelect = (mode: 'driver' | 'passenger') => {
+    setSelectedMode(mode)
   }
 
   return (
@@ -36,34 +53,120 @@ export default function Page() {
         </View>
       </Animated.View>
 
-      {/* Where to? Search Bar */}
-      <Animated.View 
-        entering={FadeInUp.delay(200)} 
-        style={styles.searchContainer}
-      >
-        <Surface style={styles.searchBar}>
-          <MaterialCommunityIcons name="magnify" size={24} color={theme.colors.primary} />
-          <Text variant="bodyLarge" style={styles.searchText}>Where to?</Text>
-        </Surface>
-      </Animated.View>
-
       {/* Services Grid */}
       <Animated.View 
         entering={FadeInUp.delay(400)}
         style={styles.servicesGrid}
       >
-        <Surface style={styles.serviceItem}>
-          <IconButton icon="car" size={32} />
-          <Text variant="labelLarge">Ride</Text>
-        </Surface>
+        <Pressable onPress={() => handleModeSelect('passenger')}>
+          <Surface 
+            style={[
+              styles.serviceItem, 
+              selectedMode === 'passenger' ? styles.selectedService : 
+              selectedMode === 'driver' ? styles.disabledService : null
+            ]}
+          >
+            <IconButton 
+              icon="seat-passenger" 
+              size={32}
+            />
+            <Text variant="labelLarge">Passenger</Text>
+          </Surface>
+        </Pressable>
         
-        <Surface style={styles.serviceItem}>
-          <IconButton icon="food" size={32} />
-          <Text variant="labelLarge">Food</Text>
-        </Surface>
-        
+        <Pressable onPress={() => handleModeSelect('driver')}>
+          <Surface 
+            style={[
+              styles.serviceItem,
+              selectedMode === 'driver' ? styles.selectedService : 
+              selectedMode === 'passenger' ? styles.disabledService : null
+            ]}
+          >
+            <IconButton 
+              icon="car" 
+              size={32}
+            />
+            <Text variant="labelLarge">Driver</Text>
+          </Surface>
+        </Pressable>
       </Animated.View>
 
+      {/* Passenger Form */}
+      {selectedMode === 'passenger' && (
+        <Animated.View 
+          entering={FadeInUp.delay(200)}
+          style={styles.formContainer}
+        >
+          <Surface style={styles.form}>
+            <TextInput
+              mode="outlined"
+              label="Origin"
+              value={passengerForm.origin}
+              onChangeText={(text) => setPassengerForm(prev => ({ ...prev, origin: text }))}
+              style={styles.input}
+            />
+            <TextInput
+              mode="outlined"
+              label="Destination"
+              value={passengerForm.destination}
+              onChangeText={(text) => setPassengerForm(prev => ({ ...prev, destination: text }))}
+              style={styles.input}
+            />
+            <TextInput
+              mode="outlined"
+              label="Date"
+              value={passengerForm.date}
+              onChangeText={(text) => setPassengerForm(prev => ({ ...prev, date: text }))}
+              style={styles.input}
+            />
+            <Button mode="contained" style={styles.submitButton}>
+              Search Rides
+            </Button>
+          </Surface>
+        </Animated.View>
+      )}
+
+      {/* Driver Form */}
+      {selectedMode === 'driver' && (
+        <Animated.View 
+          entering={FadeInUp.delay(200)}
+          style={styles.formContainer}
+        >
+          <Surface style={styles.form}>
+            <TextInput
+              mode="outlined"
+              label="Origin"
+              value={driverForm.origin}
+              onChangeText={(text) => setDriverForm(prev => ({ ...prev, origin: text }))}
+              style={styles.input}
+            />
+            <TextInput
+              mode="outlined"
+              label="Destination"
+              value={driverForm.destination}
+              onChangeText={(text) => setDriverForm(prev => ({ ...prev, destination: text }))}
+              style={styles.input}
+            />
+            <TextInput
+              mode="outlined"
+              label="Date"
+              value={driverForm.date}
+              onChangeText={(text) => setDriverForm(prev => ({ ...prev, date: text }))}
+              style={styles.input}
+            />
+            <TextInput
+              mode="outlined"
+              label="Time"
+              value={driverForm.time}
+              onChangeText={(text) => setDriverForm(prev => ({ ...prev, time: text }))}
+              style={styles.input}
+            />
+            <Button mode="contained" style={styles.submitButton}>
+              Submit
+            </Button>
+          </Surface>
+        </Animated.View>
+      )}
     </ScrollView>
   )
 }
@@ -82,49 +185,39 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  searchContainer: {
-    padding: 16,
-  },
-  searchBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 8,
-    elevation: 4,
-  },
-  searchText: {
-    marginLeft: 8,
-    color: '#666',
-  },
   servicesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     padding: 16,
     gap: 16,
+    justifyContent: 'center',
   },
   serviceItem: {
-    width: '45%',
+    width: 150,
     padding: 16,
     alignItems: 'center',
     borderRadius: 8,
     elevation: 2,
   },
-  sectionTitle: {
-    padding: 16,
-    paddingBottom: 8,
+  selectedService: {
+    backgroundColor: '#e3f2fd',
+    borderColor: '#2196f3',
+    borderWidth: 2,
   },
-  recentTrip: {
-    flexDirection: 'row',
+  disabledService: {
+    opacity: 0.5,
+  },
+  formContainer: {
     padding: 16,
-    marginHorizontal: 16,
+  },
+  form: {
+    padding: 16,
     borderRadius: 8,
-    alignItems: 'center',
+  },
+  input: {
     marginBottom: 16,
   },
-  tripDetails: {
-    marginLeft: 12,
-  },
-  tripDate: {
-    color: '#666',
-  },
+  submitButton: {
+    marginTop: 8,
+  }
 })
