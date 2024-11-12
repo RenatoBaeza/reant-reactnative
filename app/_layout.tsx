@@ -1,15 +1,37 @@
 import 'react-native-get-random-values';
-import { ClerkProvider, ClerkLoaded, ClerkLoading } from '@clerk/clerk-expo'
-import { Slot } from 'expo-router'
-import { Provider as PaperProvider } from 'react-native-paper'
-import { tokenCache } from '../functions/tokenCache'
-import * as Linking from 'expo-linking'
-import { View, ActivityIndicator } from 'react-native'
+import { Slot, useRouter, useSegments } from 'expo-router';
+import { ClerkProvider, ClerkLoaded, ClerkLoading, useAuth } from '@clerk/clerk-expo';
+import { Provider as PaperProvider } from 'react-native-paper';
+import { tokenCache } from '../functions/tokenCache';
+import * as Linking from 'expo-linking';
+import { View, ActivityIndicator } from 'react-native';
+import { useEffect } from 'react';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!
+const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
+
+function RootLayoutNav() {
+  const { isSignedIn, isLoaded } = useAuth();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoaded) return;
+
+    const inAuthGroup = segments[0] === 'auth';
+
+    if (isSignedIn && inAuthGroup) {
+      router.replace('/home');
+    } else if (!isSignedIn && !inAuthGroup) {
+      router.replace('/auth/Registration');
+    }
+  }, [isSignedIn, isLoaded, segments]);
+
+  return <Slot />;
+}
 
 export default function RootLayout() {
-  const signInUrl = Linking.createURL('oauth-native-callback')
+  const signInUrl = Linking.createURL('oauth-native-callback');
 
   return (
     <ClerkProvider 
@@ -23,10 +45,12 @@ export default function RootLayout() {
         </View>
       </ClerkLoading>
       <ClerkLoaded>
-        <PaperProvider>
-          <Slot />
-        </PaperProvider>
+        <SafeAreaProvider>
+          <PaperProvider>
+            <RootLayoutNav />
+          </PaperProvider>
+        </SafeAreaProvider>
       </ClerkLoaded>
     </ClerkProvider>
-  )
+  );
 }

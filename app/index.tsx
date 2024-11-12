@@ -1,18 +1,5 @@
-// index.tsx
-import { SignedIn, SignedOut } from '@clerk/clerk-expo'
-import { View } from 'react-native'
-import Home from './home/Home'
-import Registration from './auth/Registration'
+import { Redirect } from 'expo-router';
 
-export default function Page() {
-  return (
-    <View style={{ flex: 1 }}>
-      <SignedIn>
-        <Home/>
-      </SignedIn>
-      <SignedOut>
-        <Registration/>
-      </SignedOut>
-    </View>
-  )
+export default function Index() {
+  return <Redirect href="/(tabs)/home" />;
 }
