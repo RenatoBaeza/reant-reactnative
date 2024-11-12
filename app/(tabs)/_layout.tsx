@@ -7,18 +7,18 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: 'Home',
+          title: 'Passenger',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="home" color={color} size={size} />
+            <MaterialCommunityIcons name="account-multiple" color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
         name="rides"
         options={{
-          title: 'My Rides',
+          title: 'Driver',
           tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="car" color={color} size={size} />
+            <MaterialCommunityIcons name="steering" color={color} size={size} />
           ),
         }}
       />

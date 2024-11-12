@@ -3,22 +3,21 @@ import { useUser } from '@clerk/clerk-expo';
 import { StyleSheet, View, KeyboardAvoidingView, Platform } from 'react-native';
 import { Header } from '../../../components/Header';
 import { Map } from '../../../components/Map';
-import { DriverForm } from '../../../components/DriverForm';
 import { PassengerForm } from '../../../components/PassengerForm';
 import { ProfileSidebar } from '../../../components/ProfileSidebar';
+import { LatLng } from '../../../types/map';
 
 export default function Home() {
   const { user } = useUser();
   const [isSidebarVisible, setIsSidebarVisible] = useState(false);
-  const [driverForm, setDriverForm] = useState({
+  const [passengerForm, setPassengerForm] = useState({
     origin: '',
     originPlaceId: '',
-    originLocation: null,
+    originLocation: null as LatLng | null,
     destination: '',
     destinationPlaceId: '',
-    destinationLocation: null,
-    date: '',
-    time: '',
+    destinationLocation: null as LatLng | null,
+    date: new Date(),
   });
 
   return (
@@ -30,10 +29,13 @@ export default function Home() {
         userName={user?.firstName} 
         onProfilePress={() => setIsSidebarVisible(true)} 
       />
-      <Map />
-      <DriverForm 
-        form={driverForm}
-        onFormChange={setDriverForm}
+      <Map 
+        origin={passengerForm.originLocation}
+        destination={passengerForm.destinationLocation}
+      />
+      <PassengerForm 
+        form={passengerForm}
+        onFormChange={setPassengerForm}
       />
       <ProfileSidebar
         visible={isSidebarVisible}

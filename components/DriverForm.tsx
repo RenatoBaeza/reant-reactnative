@@ -2,6 +2,7 @@ import { StyleSheet } from 'react-native';
 import { Surface, TextInput, Button } from 'react-native-paper';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { PlacesAutocompleteInput } from './PlacesAutocompleteInput';
+import { DatePickerInput } from './DatePickerInput';
 
 interface DriverFormData {
   origin: string;
@@ -10,7 +11,7 @@ interface DriverFormData {
   destination: string;
   destinationPlaceId: string;
   destinationLocation: any;
-  date: string;
+  date: Date;
   time: string;
 }
 
@@ -50,11 +51,10 @@ export function DriverForm({ form, onFormChange }: DriverFormProps) {
             });
           }}
         />
-        <TextInput
-          mode="outlined"
+        <DatePickerInput
           label="Date"
           value={form.date}
-          onChangeText={(text) => onFormChange({ ...form, date: text })}
+          onChange={(date) => onFormChange({ ...form, date })}
           style={styles.input}
         />
         <TextInput

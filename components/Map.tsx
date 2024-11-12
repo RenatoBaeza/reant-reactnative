@@ -3,11 +3,18 @@ import { StyleSheet, View } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { ActivityIndicator, Text } from 'react-native-paper';
+import { MapRegion, LatLng } from '../types/map';
 
-export function Map() {
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+interface MapProps {
+  origin?: LatLng;
+  destination?: LatLng;
+}
+
+export function Map({ origin, destination }: MapProps) {
+  const [currentLocation, setCurrentLocation] = useState<Location.LocationObject | null>(null);
   const [address, setAddress] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [region, setRegion] = useState<MapRegion | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -17,14 +24,20 @@ export function Map() {
         return;
       }
 
-      let currentLocation = await Location.getCurrentPositionAsync({});
-      setLocation(currentLocation);
+      let location = await Location.getCurrentPositionAsync({});
+      setCurrentLocation(location);
+      setRegion({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      });
 
       // Get address from coordinates
       try {
         const reverseGeocode = await Location.reverseGeocodeAsync({
-          latitude: currentLocation.coords.latitude,
-          longitude: currentLocation.coords.longitude,
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
         });
 
         if (reverseGeocode.length > 0) {
@@ -35,7 +48,7 @@ export function Map() {
             loc.city,
             loc.region,
             loc.postalCode
-          ].filter(Boolean); // Remove empty/undefined values
+          ].filter(Boolean);
           
           setAddress(addressComponents.join(', '));
         }
@@ -46,7 +59,33 @@ export function Map() {
     })();
   }, []);
 
-  if (!location) {
+  useEffect(() => {
+    if (origin && destination) {
+      // Calculate the region to show both markers
+      const bounds = {
+        minLat: Math.min(origin.lat, destination.lat),
+        maxLat: Math.max(origin.lat, destination.lat),
+        minLng: Math.min(origin.lng, destination.lng),
+        maxLng: Math.max(origin.lng, destination.lng),
+      };
+
+      const center = {
+        latitude: (bounds.minLat + bounds.maxLat) / 2,
+        longitude: (bounds.minLng + bounds.maxLng) / 2,
+      };
+
+      const latDelta = (bounds.maxLat - bounds.minLat) * 1.5;
+      const lngDelta = (bounds.maxLng - bounds.minLng) * 1.5;
+
+      setRegion({
+        ...center,
+        latitudeDelta: Math.max(latDelta, 0.0922),
+        longitudeDelta: Math.max(lngDelta, 0.0421),
+      });
+    }
+  }, [origin, destination]);
+
+  if (!currentLocation || !region) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" />
@@ -60,24 +99,41 @@ export function Map() {
         <MapView
           provider={PROVIDER_GOOGLE}
           style={styles.map}
-          initialRegion={{
-            latitude: location.coords.latitude,
-            longitude: location.coords.longitude,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
-          }}
-          zoomEnabled={false}
+          region={region}
+          zoomEnabled={true}
           rotateEnabled={false}
-          scrollEnabled={false}
+          scrollEnabled={true}
           pitchEnabled={false}
         >
-          <Marker
-            coordinate={{
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-            }}
-            title="You are here"
-          />
+          {currentLocation && (
+            <Marker
+              coordinate={{
+                latitude: currentLocation.coords.latitude,
+                longitude: currentLocation.coords.longitude,
+              }}
+              title="Current Location"
+            />
+          )}
+          {origin && (
+            <Marker
+              coordinate={{
+                latitude: origin.lat,
+                longitude: origin.lng,
+              }}
+              title="Origin"
+              pinColor="green"
+            />
+          )}
+          {destination && (
+            <Marker
+              coordinate={{
+                latitude: destination.lat,
+                longitude: destination.lng,
+              }}
+              title="Destination"
+              pinColor="red"
+            />
+          )}
         </MapView>
       </View>
       <View style={styles.addressContainer}>

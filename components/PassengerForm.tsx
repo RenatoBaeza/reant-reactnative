@@ -2,6 +2,7 @@ import { StyleSheet } from 'react-native';
 import { Surface, TextInput, Button } from 'react-native-paper';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { PlacesAutocompleteInput } from './PlacesAutocompleteInput';
+import { DatePickerInput } from './DatePickerInput';
 
 interface PassengerFormData {
   origin: string;
@@ -10,7 +11,7 @@ interface PassengerFormData {
   destination: string;
   destinationPlaceId: string;
   destinationLocation: any;
-  date: string;
+  date: Date;
 }
 
 interface PassengerFormProps {
@@ -49,11 +50,10 @@ export function PassengerForm({ form, onFormChange }: PassengerFormProps) {
             });
           }}
         />
-        <TextInput
-          mode="outlined"
+        <DatePickerInput
           label="Date"
           value={form.date}
-          onChangeText={(text) => onFormChange({ ...form, date: text })}
+          onChange={(date) => onFormChange({ ...form, date })}
           style={styles.input}
         />
         <Button mode="contained" style={styles.submitButton}>
