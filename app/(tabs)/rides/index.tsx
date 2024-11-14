@@ -14,7 +14,7 @@ export default function Rides() {
     date: new Date(),
     time: '',
     vehicleId: '',
-    seats: '',
+    seats: null,
   });
 
   return (
