@@ -65,12 +65,57 @@ export default function VehicleList() {
     }
   };
 
+  const deleteVehicle = async (vehicleId: string) => {
+    try {
+      const userEmail = user?.emailAddresses[0].emailAddress ?? '';
+      const deleteUrl = `${API_URL}/${vehicleId}`;
+      console.log('Deleting vehicle at:', deleteUrl);
+      console.log('User email:', userEmail);
+
+      const response = await fetch(deleteUrl, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'user-email': userEmail,
+        },
+      });
+
+      console.log('Delete response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to delete vehicle: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('Delete response data:', data);
+      
+      // Refresh the vehicle list
+      fetchVehicles();
+    } catch (err) {
+      console.error('Error deleting vehicle:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete vehicle');
+    }
+  };
+
   const renderItem = ({ item }: { item: Vehicle }) => (
     <View style={styles.item}>
-      <Text variant="bodyLarge">{item.car_brand} {item.car_model}</Text>
-      <Text variant="bodyMedium">Year: {item.car_year}</Text>
-      <Text variant="bodyMedium">Color: {item.car_color}</Text>
-      <Text variant="bodyMedium">License Plate: {item.car_license_plate}</Text>
+      <View style={styles.itemContent}>
+        <Text variant="bodyLarge">{item.car_brand} {item.car_model}</Text>
+        <Text variant="bodyMedium">Year: {item.car_year}</Text>
+        <Text variant="bodyMedium">Color: {item.car_color}</Text>
+        <Text variant="bodyMedium">License Plate: {item.car_license_plate}</Text>
+      </View>
+      <Button
+        mode="text"
+        onPress={() => deleteVehicle(item.id)}
+        icon={() => (
+          <MaterialCommunityIcons name="delete" size={20} color="#FF5252" />
+        )}
+        style={styles.deleteButton}
+      />
     </View>
   );
 
@@ -139,6 +184,14 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     backgroundColor: '#f9f9f9',
     borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  itemContent: {
+    flex: 1,
+  },
+  deleteButton: {
+    marginLeft: 8,
   },
   button: {
     marginTop: 16,
