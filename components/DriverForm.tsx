@@ -4,6 +4,8 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { PlacesAutocompleteInput } from './PlacesAutocompleteInput';
 import { DatePickerInput } from './DatePickerInput';
 import { TimePickerInput } from './TimePickerInput';
+import { VehicleSelector } from './VehicleSelector';
+import { RouteInfo } from './RouteInfo';
 
 interface DriverFormData {
   origin: string;
@@ -14,6 +16,7 @@ interface DriverFormData {
   destinationLocation: any;
   date: Date;
   time: string;
+  vehicleId: string;
 }
 
 interface DriverFormProps {
@@ -52,6 +55,14 @@ export function DriverForm({ form, onFormChange }: DriverFormProps) {
             });
           }}
         />
+        
+        {form.originLocation && form.destinationLocation && (
+          <RouteInfo
+            origin={form.originLocation}
+            destination={form.destinationLocation}
+          />
+        )}
+
         <DatePickerInput
           label="Date"
           value={form.date}
@@ -62,6 +73,11 @@ export function DriverForm({ form, onFormChange }: DriverFormProps) {
           label="Time"
           value={form.time}
           onChange={(time) => onFormChange({ ...form, time })}
+          style={styles.input}
+        />
+        <VehicleSelector
+          selectedVehicle={form.vehicleId}
+          onVehicleSelect={(vehicleId) => onFormChange({ ...form, vehicleId })}
           style={styles.input}
         />
         <Button mode="contained" style={styles.submitButton}>
@@ -85,5 +101,5 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     marginTop: 8,
-  },
+  }
 });
