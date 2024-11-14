@@ -17,6 +17,7 @@ interface DriverFormData {
   date: Date;
   time: string;
   vehicleId: string;
+  seats: string;
 }
 
 interface DriverFormProps {
@@ -79,6 +80,21 @@ export function DriverForm({ form, onFormChange }: DriverFormProps) {
           selectedVehicle={form.vehicleId}
           onVehicleSelect={(vehicleId) => onFormChange({ ...form, vehicleId })}
           style={styles.input}
+        />
+        <TextInput
+          mode="outlined"
+          label="Available Seats"
+          value={form.seats}
+          onChangeText={(text) => {
+            // Only allow numbers 1-9
+            const numericValue = text.replace(/[^1-9]/g, '');
+            if (numericValue.length <= 1) {
+              onFormChange({ ...form, seats: numericValue });
+            }
+          }}
+          keyboardType="numeric"
+          style={styles.input}
+          placeholder="Enter number of seats (1-9)"
         />
         <Button mode="contained" style={styles.submitButton}>
           Submit

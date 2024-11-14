@@ -13,6 +13,8 @@ export default function Rides() {
     destinationLocation: null,
     date: new Date(),
     time: '',
+    vehicleId: '',
+    seats: '',
   });
 
   return (
