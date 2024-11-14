@@ -23,6 +23,14 @@ export default function Profile() {
         <Text variant="headlineMedium">Profile</Text>
         <Text variant="bodyLarge">{user?.firstName} {user?.lastName}</Text>
         <Text variant="bodyMedium">{user?.emailAddresses[0].emailAddress}</Text>
+        
+        <Button 
+          mode="contained" 
+          onPress={() => router.push('/profile/vehicle-list')}
+          style={styles.button}
+        >
+          Vehicle List
+        </Button>
       </View>
 
       <Button 
@@ -43,6 +51,9 @@ const styles = StyleSheet.create({
   },
   content: {
     gap: 8,
+  },
+  button: {
+    marginTop: 16,
   },
   logoutButton: {
     marginTop: 24,
