@@ -6,9 +6,10 @@ import { LatLng } from '../types/map';
 interface RouteInfoProps {
   origin: LatLng;
   destination: LatLng;
+  onRouteInfo?: (distance: string, duration: string) => void;
 }
 
-export function RouteInfo({ origin, destination }: RouteInfoProps) {
+export function RouteInfo({ origin, destination, onRouteInfo }: RouteInfoProps) {
   const [distance, setDistance] = useState<string>('');
   const [duration, setDuration] = useState<string>('');
 
@@ -31,6 +32,7 @@ export function RouteInfo({ origin, destination }: RouteInfoProps) {
           const element = data.rows[0].elements[0];
           setDistance(element.distance.text);
           setDuration(element.duration.text);
+          onRouteInfo?.(element.distance.text, element.duration.text);
         }
       } catch (error) {
         console.error('Error fetching route info:', error);
@@ -38,7 +40,7 @@ export function RouteInfo({ origin, destination }: RouteInfoProps) {
     };
 
     fetchRouteInfo();
-  }, [origin, destination]);
+  }, [origin, destination, onRouteInfo]);
 
   if (!distance || !duration) return null;
 

@@ -1,11 +1,13 @@
 import { StyleSheet } from 'react-native';
 import { Surface, TextInput, Button } from 'react-native-paper';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { useState } from 'react';
 import { PlacesAutocompleteInput } from './PlacesAutocompleteInput';
 import { DatePickerInput } from './DatePickerInput';
 import { TimePickerInput } from './TimePickerInput';
 import { VehicleSelector } from './VehicleSelector';
 import { RouteInfo } from './RouteInfo';
+import { ConfirmationModal } from './ConfirmationModal';
 
 interface DriverFormData {
   origin: string;
@@ -17,7 +19,9 @@ interface DriverFormData {
   date: Date;
   time: string;
   vehicleId: string;
-  seats: string;
+  seats: number;
+  distance?: string;
+  duration?: string;
 }
 
 interface DriverFormProps {
@@ -26,6 +30,17 @@ interface DriverFormProps {
 }
 
 export function DriverForm({ form, onFormChange }: DriverFormProps) {
+  const [showConfirmation, setShowConfirmation] = useState(false);
+
+  const handleSubmit = () => {
+    setShowConfirmation(true);
+  };
+
+  const handleConfirm = () => {
+    // TODO: Implement the actual submission logic here
+    setShowConfirmation(false);
+  };
+
   return (
     <Animated.View 
       entering={FadeInUp.delay(200)}
@@ -61,6 +76,13 @@ export function DriverForm({ form, onFormChange }: DriverFormProps) {
           <RouteInfo
             origin={form.originLocation}
             destination={form.destinationLocation}
+            onRouteInfo={(distance, duration) => {
+              onFormChange({
+                ...form,
+                distance,
+                duration,
+              });
+            }}
           />
         )}
 
@@ -96,10 +118,21 @@ export function DriverForm({ form, onFormChange }: DriverFormProps) {
           style={styles.input}
           placeholder="Enter number of seats (1-9)"
         />
-        <Button mode="contained" style={styles.submitButton}>
+        <Button 
+          mode="contained" 
+          onPress={handleSubmit}
+          style={styles.submitButton}
+        >
           Submit
         </Button>
       </Surface>
+
+      <ConfirmationModal
+        visible={showConfirmation}
+        onDismiss={() => setShowConfirmation(false)}
+        onConfirm={handleConfirm}
+        form={form}
+      />
     </Animated.View>
   );
 }
