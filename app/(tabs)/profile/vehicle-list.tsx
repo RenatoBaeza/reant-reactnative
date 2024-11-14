@@ -1,23 +1,76 @@
-import React from 'react';
-import { View, StyleSheet, FlatList } from 'react-native';
-import { Text, Button } from 'react-native-paper';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, FlatList, Platform } from 'react-native';
+import { Text, Button, ActivityIndicator } from 'react-native-paper';
 import { useRouter } from 'expo-router';
+import { useUser } from '@clerk/clerk-expo';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const vehicles = [
-  { id: '1', make: 'Toyota', model: 'Corolla', year: '2020', color: 'Blue', licensePlate: 'ABC123' },
-  { id: '2', make: 'Honda', model: 'Civic', year: '2019', color: 'Red', licensePlate: 'XYZ789' },
-  // Add more vehicle objects as needed
-];
+const API_URL = Platform.select({
+  android: 'http://10.0.2.2:8000/user-vehicles',
+  ios: 'http://localhost:8000/user-vehicles',
+  default: 'http://localhost:8000/user-vehicles',
+});
+
+interface Vehicle {
+  id: string;
+  car_brand: string;
+  car_model: string;
+  car_year: string;
+  car_color: string;
+  car_license_plate: string;
+}
 
 export default function VehicleList() {
   const router = useRouter();
+  const { user } = useUser();
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const renderItem = ({ item }: { item: any }) => (
+  useEffect(() => {
+    fetchVehicles();
+  }, []);
+
+  const fetchVehicles = async () => {
+    try {
+      const userEmail = user?.emailAddresses[0].emailAddress ?? '';
+      console.log('Fetching vehicles from:', API_URL);
+      console.log('User email:', userEmail);
+      
+      const response = await fetch(API_URL, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'user-email': userEmail,
+        },
+      });
+
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error('Failed to fetch vehicles');
+      }
+
+      const data = await response.json();
+      console.log('Vehicles data:', data);
+      setVehicles(data.data || []);
+    } catch (err) {
+      console.error('Error fetching vehicles:', err);
+      setError('Failed to load vehicles');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderItem = ({ item }: { item: Vehicle }) => (
     <View style={styles.item}>
-      <Text variant="bodyLarge">{item.make} {item.model}</Text>
-      <Text variant="bodyMedium">Year: {item.year}</Text>
-      <Text variant="bodyMedium">Color: {item.color}</Text>
-      <Text variant="bodyMedium">License Plate: {item.licensePlate}</Text>
+      <Text variant="bodyLarge">{item.car_brand} {item.car_model}</Text>
+      <Text variant="bodyMedium">Year: {item.car_year}</Text>
+      <Text variant="bodyMedium">Color: {item.car_color}</Text>
+      <Text variant="bodyMedium">License Plate: {item.car_license_plate}</Text>
     </View>
   );
 
@@ -27,15 +80,36 @@ export default function VehicleList() {
         mode="text" 
         onPress={() => router.back()}
         style={styles.backButton}
+        icon={() => (
+          <MaterialCommunityIcons name="arrow-left" size={20} />
+        )}
       >
         Back
       </Button>
       <Text variant="headlineMedium" style={styles.title}>Vehicle List</Text>
-      <FlatList
-        data={vehicles}
-        renderItem={renderItem}
-        keyExtractor={item => item.id}
-      />
+      
+      {loading ? (
+        <View style={styles.centerContent}>
+          <ActivityIndicator size="large" />
+        </View>
+      ) : error ? (
+        <View style={styles.centerContent}>
+          <Text variant="bodyLarge" style={styles.errorText}>{error}</Text>
+        </View>
+      ) : vehicles.length === 0 ? (
+        <View style={styles.centerContent}>
+          <Text variant="bodyLarge">No vehicles found</Text>
+          <Text variant="bodyMedium" style={styles.subtitle}>Add your first vehicle below</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={vehicles}
+          renderItem={renderItem}
+          keyExtractor={item => item.id}
+          contentContainerStyle={styles.listContent}
+        />
+      )}
+      
       <Button 
         mode="contained" 
         onPress={() => router.push('/profile/vehicle-add')}
@@ -68,5 +142,26 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 16,
+  },
+  error: {
+    color: 'red',
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+  },
+  subtitle: {
+    color: '#666',
+    marginTop: 8,
+  },
+  listContent: {
+    flexGrow: 1,
   },
 });

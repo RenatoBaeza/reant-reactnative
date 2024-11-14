@@ -43,14 +43,16 @@ export default function VehicleAdd() {
     setLoading(true);
     try {
       console.log('Sending request to:', API_URL);
+      const userEmail = user?.emailAddresses[0].emailAddress || '';
       const response = await fetch(API_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'user-email': userEmail,
         },
         body: JSON.stringify({
-          user_email: user?.emailAddresses[0].emailAddress,
+          user_email: userEmail,
           car_brand: vehicle.make,
           car_model: vehicle.model,
           car_year: parseInt(vehicle.year),
