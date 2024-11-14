@@ -3,6 +3,7 @@ import { Surface, TextInput, Button } from 'react-native-paper';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { PlacesAutocompleteInput } from './PlacesAutocompleteInput';
 import { DatePickerInput } from './DatePickerInput';
+import { TimePickerInput } from './TimePickerInput';
 
 interface DriverFormData {
   origin: string;
@@ -57,11 +58,10 @@ export function DriverForm({ form, onFormChange }: DriverFormProps) {
           onChange={(date) => onFormChange({ ...form, date })}
           style={styles.input}
         />
-        <TextInput
-          mode="outlined"
+        <TimePickerInput
           label="Time"
           value={form.time}
-          onChangeText={(text) => onFormChange({ ...form, time: text })}
+          onChange={(time) => onFormChange({ ...form, time })}
           style={styles.input}
         />
         <Button mode="contained" style={styles.submitButton}>
