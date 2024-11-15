@@ -1,9 +1,10 @@
-import { View, StyleSheet, Platform, FlatList } from 'react-native';
+import { View, StyleSheet, Platform, FlatList, Pressable } from 'react-native';
 import { Text, Surface, Button } from 'react-native-paper';
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { format } from 'date-fns';
+import { useUser } from '@clerk/clerk-expo';
 
 const API_URL = Platform.select({
   android: 'http://10.0.2.2:8000/rides/search-rides',
@@ -33,6 +34,7 @@ export default function RidesAvailable() {
   const [rides, setRides] = useState<RideDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useUser();
 
   useEffect(() => {
     fetchAvailableRides();
@@ -75,35 +77,44 @@ export default function RidesAvailable() {
 
   const renderRideItem = ({ item }: { item: RideDetails }) => {
     const datetime = new Date(item.ride_start_datetime);
+    const userEmail = user?.emailAddresses[0].emailAddress;
 
     return (
-      <Surface style={styles.rideCard} elevation={1}>
-        <View style={styles.routeContainer}>
-          <Text variant="titleMedium" numberOfLines={1}>{item.origin}</Text>
-          <Text variant="titleMedium" style={styles.arrow}>→</Text>
-          <Text variant="titleMedium" numberOfLines={1}>{item.destination}</Text>
-        </View>
-        
-        <View style={styles.detailsContainer}>
-          <Text variant="bodyMedium">
-            {format(datetime, 'MMM d, yyyy • h:mm a')}
-          </Text>
-          <Text variant="bodyMedium">
-            {item.available_seats} seats available
-          </Text>
-        </View>
-
-        {item.vehicle_details && (
-          <View style={styles.vehicleDetails}>
+      <Pressable onPress={() => router.push({
+        pathname: `/(tabs)/home/passenger-ride-details`,
+        params: { 
+          id: item.ride_id,
+          userEmail: userEmail
+        }
+      })}>
+        <Surface style={styles.rideCard} elevation={1}>
+          <View style={styles.routeContainer}>
+            <Text variant="titleMedium" numberOfLines={1}>{item.origin}</Text>
+            <Text variant="titleMedium" style={styles.arrow}>→</Text>
+            <Text variant="titleMedium" numberOfLines={1}>{item.destination}</Text>
+          </View>
+          
+          <View style={styles.detailsContainer}>
             <Text variant="bodyMedium">
-              {item.vehicle_details.car_year} {item.vehicle_details.car_brand} {item.vehicle_details.car_model}
+              {format(datetime, 'MMM d, yyyy • h:mm a')}
             </Text>
             <Text variant="bodyMedium">
-              Color: {item.vehicle_details.car_color}
+              {item.available_seats} seats available
             </Text>
           </View>
-        )}
-      </Surface>
+
+          {item.vehicle_details && (
+            <View style={styles.vehicleDetails}>
+              <Text variant="bodyMedium">
+                {item.vehicle_details.car_year} {item.vehicle_details.car_brand} {item.vehicle_details.car_model}
+              </Text>
+              <Text variant="bodyMedium">
+                Color: {item.vehicle_details.car_color}
+              </Text>
+            </View>
+          )}
+        </Surface>
+      </Pressable>
     );
   };
 
