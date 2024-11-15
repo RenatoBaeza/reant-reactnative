@@ -1,6 +1,7 @@
-import { View, StyleSheet, SafeAreaView } from "react-native";
+import { View, StyleSheet, SafeAreaView, ScrollView } from "react-native";
 import { Text } from "react-native-paper";
 import { DriverForm } from "../../../components/DriverForm";
+import { AwaitingRidesList } from "../../../components/AwaitingRidesList";
 import { useState } from "react";
 
 export default function Rides() {
@@ -19,7 +20,7 @@ export default function Rides() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <ScrollView style={styles.container}>
         <Text variant="headlineMedium" style={styles.title}>
           Where are you driving?
         </Text>
@@ -27,7 +28,8 @@ export default function Rides() {
           form={driverForm}
           onFormChange={setDriverForm}
         />
-      </View>
+        <AwaitingRidesList />
+      </ScrollView>
     </SafeAreaView>
   );
 }
