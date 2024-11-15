@@ -18,6 +18,8 @@ export default function Home() {
     destinationPlaceId: '',
     destinationLocation: null as LatLng | null,
     date: new Date(),
+    distance: '',
+    duration: '',
   });
 
   return (

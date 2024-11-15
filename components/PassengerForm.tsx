@@ -3,6 +3,7 @@ import { Surface, TextInput, Button } from 'react-native-paper';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { PlacesAutocompleteInput } from './PlacesAutocompleteInput';
 import { DatePickerInput } from './DatePickerInput';
+import { RouteInfo } from './RouteInfo';
 
 interface PassengerFormData {
   origin: string;
@@ -12,6 +13,8 @@ interface PassengerFormData {
   destinationPlaceId: string;
   destinationLocation: any;
   date: Date;
+  distance?: string;
+  duration?: string;
 }
 
 interface PassengerFormProps {
@@ -50,6 +53,21 @@ export function PassengerForm({ form, onFormChange }: PassengerFormProps) {
             });
           }}
         />
+        
+        {form.originLocation && form.destinationLocation && (
+          <RouteInfo
+            origin={form.originLocation}
+            destination={form.destinationLocation}
+            onRouteInfo={(distance, duration) => {
+              onFormChange({
+                ...form,
+                distance,
+                duration,
+              });
+            }}
+          />
+        )}
+
         <DatePickerInput
           label="Date"
           value={form.date}
