@@ -60,13 +60,10 @@ export function PlacesAutocompleteInput({
 const styles = StyleSheet.create({
   container: {
     marginBottom: 16,
-    zIndex: 2,
-    elevation: 2,
+    position: 'relative',
   },
   autoCompleteContainer: {
     flex: 0,
-    zIndex: 2,
-    elevation: 2,
   },
   textInput: {
     height: 56,
@@ -83,8 +80,8 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: 'white',
     borderRadius: 4,
-    zIndex: 1000,
-    elevation: 3,
+    zIndex: 9999,
+    elevation: 9999,
   },
   row: {
     padding: 13,
