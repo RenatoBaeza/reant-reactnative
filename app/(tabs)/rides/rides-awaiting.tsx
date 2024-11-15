@@ -1,5 +1,5 @@
 import { View, StyleSheet, Platform } from 'react-native';
-import { Text, Surface, Button } from 'react-native-paper';
+import { Text, Surface, Button, Portal, Modal } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/clerk-expo';
@@ -44,6 +44,7 @@ export default function RidesAwaiting() {
   const [isDriver, setIsDriver] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
   useEffect(() => {
     fetchRideDetails();
@@ -85,7 +86,7 @@ export default function RidesAwaiting() {
     }
   };
 
-  const handleCancelRide = async () => {
+  const handleCancelConfirm = async () => {
     try {
       const userEmail = user?.emailAddresses[0].emailAddress;
       const response = await fetch(`${API_URL}/${id}/cancel`, {
@@ -112,6 +113,8 @@ export default function RidesAwaiting() {
     } catch (err) {
       console.error('Error canceling ride:', err);
       setError(err instanceof Error ? err.message : 'Failed to cancel ride');
+    } finally {
+      setShowCancelConfirmation(false);
     }
   };
 
@@ -219,13 +222,47 @@ export default function RidesAwaiting() {
       {isDriver && (
         <Button 
           mode="contained" 
-          onPress={handleCancelRide}
+          onPress={() => setShowCancelConfirmation(true)}
           style={styles.cancelButton}
           buttonColor="#FF5252"
         >
           Cancel Ride
         </Button>
       )}
+
+      <Portal>
+        <Modal
+          visible={showCancelConfirmation}
+          onDismiss={() => setShowCancelConfirmation(false)}
+          contentContainerStyle={styles.modalContainer}
+        >
+          <Surface style={styles.modalContent}>
+            <Text variant="headlineSmall" style={styles.modalTitle}>
+              Cancel Ride
+            </Text>
+            <Text variant="bodyMedium" style={styles.modalText}>
+              Are you sure you want to cancel this ride? This action cannot be undone.
+            </Text>
+            <View style={styles.modalButtons}>
+              <Button 
+                mode="outlined" 
+                onPress={() => setShowCancelConfirmation(false)}
+                style={styles.modalButton}
+              >
+                No, Keep Ride
+              </Button>
+              <Button 
+                mode="contained"
+                onPress={handleCancelConfirm}
+                style={styles.modalButton}
+                buttonColor="#FF5252"
+              >
+                Yes, Cancel
+              </Button>
+            </View>
+          </Surface>
+        </Modal>
+      </Portal>
     </View>
   );
 }
@@ -293,5 +330,30 @@ const styles = StyleSheet.create({
   },
   arrow: {
     marginHorizontal: 8,
+  },
+  modalContainer: {
+    padding: 20,
+  },
+  modalContent: {
+    padding: 20,
+    borderRadius: 12,
+    backgroundColor: 'white',
+  },
+  modalTitle: {
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  modalText: {
+    textAlign: 'center',
+    marginBottom: 24,
+    color: '#666',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
   },
 });
