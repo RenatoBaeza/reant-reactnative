@@ -20,6 +20,17 @@ const API_URL_PUT = Platform.select({
   default: 'http://localhost:8000/rides/cancel-ride',
 });
 
+interface SeatDetail {
+  seat_id: string;
+  seat_number: number;
+  seat_status: 'free' | 'taken' | 'pending';
+  passenger_email: string | null;
+}
+
+interface SeatsDetails {
+  [key: string]: SeatDetail;
+}
+
 interface RideDetails {
   ride_id: string;
   driver_email: string;
@@ -28,6 +39,7 @@ interface RideDetails {
   destination: string;
   available_seats: number;
   ride_start_datetime: string;
+  seats_details: SeatsDetails;
   vehicle_details?: {
     car_brand: string;
     car_model: string;
@@ -128,12 +140,45 @@ export default function RidesAwaiting() {
     }
   };
 
-  const renderSeatItem = ({ item, index }: { item: number; index: number }) => (
-    <Surface style={styles.seatCard} elevation={1}>
-      <Text variant="bodyLarge">Seat {index + 1}</Text>
-      <Text variant="bodyMedium" style={styles.seatStatus}>Available</Text>
-    </Surface>
-  );
+  const renderSeatItem = ({ item }: { item: SeatDetail }) => {
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'free':
+          return '#4CAF50'; // Green
+        case 'taken':
+          return '#FF5252'; // Red
+        case 'pending':
+          return '#FFC107'; // Yellow
+        default:
+          return '#666666'; // Gray
+      }
+    };
+
+    const getStatusText = (status: string) => {
+      switch (status) {
+        case 'free':
+          return 'Available';
+        case 'taken':
+          return 'Taken';
+        case 'pending':
+          return 'Pending';
+        default:
+          return 'Unknown';
+      }
+    };
+
+    return (
+      <Surface style={styles.seatCard} elevation={1}>
+        <Text variant="bodyLarge">Seat {item.seat_number}</Text>
+        <Text 
+          variant="bodyMedium" 
+          style={[styles.seatStatus, { color: getStatusColor(item.seat_status) }]}
+        >
+          {getStatusText(item.seat_status)}
+        </Text>
+      </Surface>
+    );
+  };
 
   if (loading || !ride) {
     return (
@@ -221,9 +266,9 @@ export default function RidesAwaiting() {
       <View style={styles.seatsSection}>
         <Text variant="titleLarge" style={styles.seatsTitle}>Available Seats</Text>
         <FlatList
-          data={[...Array(ride.available_seats)]}
+          data={Object.values(ride.seats_details)}
           renderItem={renderSeatItem}
-          keyExtractor={(_, index) => `seat-${index}`}
+          keyExtractor={(item) => item.seat_id}
           horizontal={false}
           contentContainerStyle={styles.seatsList}
         />
