@@ -13,9 +13,9 @@ import { useUser } from '@clerk/clerk-expo';
 import { useRouter } from 'expo-router';
 
 const API_URL = Platform.select({
-  android: 'http://10.0.2.2:8000/rides',
-  ios: 'http://localhost:8000/rides',
-  default: 'http://localhost:8000/rides',
+  android: 'http://10.0.2.2:8000/rides/create-ride',
+  ios: 'http://localhost:8000/rides/create-ride',
+  default: 'http://localhost:8000/rides/create-ride',
 });
 
 interface DriverFormData {

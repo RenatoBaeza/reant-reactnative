@@ -6,9 +6,9 @@ import { useRouter } from 'expo-router';
 import { format } from 'date-fns';
 
 const API_URL = Platform.select({
-  android: 'http://10.0.2.2:8000/rides/rides-awaiting',
-  ios: 'http://localhost:8000/rides/rides-awaiting',
-  default: 'http://localhost:8000/rides/rides-awaiting',
+  android: 'http://10.0.2.2:8000/rides/get-awaiting-rides',
+  ios: 'http://localhost:8000/rides/get-awaiting-rides',
+  default: 'http://localhost:8000/rides/get-awaiting-rides',
 });
 
 interface RideDetails {

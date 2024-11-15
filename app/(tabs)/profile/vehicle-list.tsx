@@ -6,9 +6,9 @@ import { useUser } from '@clerk/clerk-expo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const API_URL = Platform.select({
-  android: 'http://10.0.2.2:8000/user-vehicles',
-  ios: 'http://localhost:8000/user-vehicles',
-  default: 'http://localhost:8000/user-vehicles',
+  android: 'http://10.0.2.2:8000/vehicles/user-vehicles',
+  ios: 'http://localhost:8000/vehicles/user-vehicles',
+  default: 'http://localhost:8000/vehicles/user-vehicles',
 });
 
 interface Vehicle {

@@ -7,9 +7,9 @@ import { validateForm } from '../../../functions/formValidation';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const API_URL = Platform.select({
-  android: 'http://10.0.2.2:8000/user-vehicles', // Android Emulator
-  ios: 'http://localhost:8000/user-vehicles',    // iOS Simulator
-  default: 'http://localhost:8000/user-vehicles', // Web/default
+  android: 'http://10.0.2.2:8000/vehicles/user-vehicles', // Android Emulator
+  ios: 'http://localhost:8000/vehicles/user-vehicles',    // iOS Simulator
+  default: 'http://localhost:8000/vehicles/user-vehicles', // Web/default
 });
 
 export default function VehicleAdd() {

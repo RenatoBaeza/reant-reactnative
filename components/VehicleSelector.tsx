@@ -19,9 +19,9 @@ interface VehicleSelectProps {
 }
 
 const API_URL = Platform.select({
-  android: 'http://10.0.2.2:8000/user-vehicles',
-  ios: 'http://localhost:8000/user-vehicles',
-  default: 'http://localhost:8000/user-vehicles',
+  android: 'http://10.0.2.2:8000/vehicles/user-vehicles',
+  ios: 'http://localhost:8000/vehicles/user-vehicles',
+  default: 'http://localhost:8000/vehicles/user-vehicles',
 });
 
 export function VehicleSelector({ selectedVehicle, onVehicleSelect, style }: VehicleSelectProps) {

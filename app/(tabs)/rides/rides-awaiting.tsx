@@ -8,9 +8,9 @@ import { format } from 'date-fns';
 import { FlatList } from 'react-native';
 
 const API_URL = Platform.select({
-  android: 'http://10.0.2.2:8000/rides',
-  ios: 'http://localhost:8000/rides',
-  default: 'http://localhost:8000/rides',
+  android: 'http://10.0.2.2:8000/rides/get-awaiting-ride-detail',
+  ios: 'http://localhost:8000/rides/get-awaiting-ride-detail',
+  default: 'http://localhost:8000/rides/get-awaiting-ride-detail',
 });
 
 interface RideDetails {
@@ -89,7 +89,7 @@ export default function RidesAwaiting() {
   const handleCancelConfirm = async () => {
     try {
       const userEmail = user?.emailAddresses[0].emailAddress;
-      const response = await fetch(`${API_URL}/${id}/cancel`, {
+      const response = await fetch(`${API_URL}/${id}/cancel-ride`, {
         method: 'PUT',
         headers: {
           'Accept': 'application/json',
