@@ -87,8 +87,8 @@ export default function RidesAwaiting() {
   const handleCancelRide = async () => {
     try {
       const userEmail = user?.emailAddresses[0].emailAddress;
-      const response = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE',
+      const response = await fetch(`${API_URL}/${id}/cancel`, {
+        method: 'PUT',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -97,13 +97,20 @@ export default function RidesAwaiting() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to cancel ride');
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to cancel ride: ${errorText}`);
       }
 
-      router.replace('/rides');
+      const data = await response.json();
+      if (data.status === 'ok') {
+        router.replace('/rides');
+      } else {
+        throw new Error('Invalid response from server');
+      }
     } catch (err) {
       console.error('Error canceling ride:', err);
-      setError('Failed to cancel ride');
+      setError(err instanceof Error ? err.message : 'Failed to cancel ride');
     }
   };
 
