@@ -68,7 +68,7 @@ export function AwaitingRidesList() {
     const datetime = new Date(item.ride_start_datetime);
 
     return (
-      <Pressable onPress={() => router.push(`/(tabs)/rides/rides-awaiting/${item.ride_id}`)}>
+      <Pressable onPress={() => router.push(`/rides/rides-awaiting?id=${item.ride_id}`)}>
         <Surface style={styles.rideCard} elevation={1}>
           <View style={styles.routeContainer}>
             <Text variant="titleMedium" numberOfLines={1}>{item.origin}</Text>
