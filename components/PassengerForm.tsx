@@ -37,24 +37,22 @@ export function PassengerForm({ form, onFormChange }: PassengerFormProps) {
         <PlacesAutocompleteInput
           label="Origin"
           value={form.origin}
-          onPlaceSelect={(data, details) => {
+          onPlaceSelect={(place) => {
             onFormChange({
               ...form,
-              origin: data.description,
-              originPlaceId: details.place_id,
-              originLocation: details.geometry.location,
+              origin: place.description,
+              originLocation: place.geometry.location,
             });
           }}
         />
         <PlacesAutocompleteInput
           label="Destination"
           value={form.destination}
-          onPlaceSelect={(data, details) => {
+          onPlaceSelect={(place) => {
             onFormChange({
               ...form,
-              destination: data.description,
-              destinationPlaceId: details.place_id,
-              destinationLocation: details.geometry.location,
+              destination: place.description,
+              destinationLocation: place.geometry.location,
             });
           }}
         />

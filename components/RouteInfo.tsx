@@ -19,20 +19,21 @@ export function RouteInfo({ origin, destination, onRouteInfo }: RouteInfoProps) 
     const fetchRouteInfo = async () => {
       try {
         const response = await fetch(
-          `https://maps.googleapis.com/maps/api/distancematrix/json?` +
-          `origins=${origin.lat},${origin.lng}&` +
-          `destinations=${destination.lat},${destination.lng}&` +
-          `mode=driving&` +
-          `key=${process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY}`
+          `https://router.project-osrm.org/route/v1/driving/` +
+          `${origin.lng},${origin.lat};${destination.lng},${destination.lat}` +
+          `?overview=false`
         );
 
         const data = await response.json();
         
-        if (data.status === 'OK' && data.rows[0].elements[0].status === 'OK') {
-          const element = data.rows[0].elements[0];
-          setDistance(element.distance.text);
-          setDuration(element.duration.text);
-          onRouteInfo?.(element.distance.text, element.duration.text);
+        if (data.code === 'Ok' && data.routes?.[0]) {
+          const route = data.routes[0];
+          const distanceKm = (route.distance / 1000).toFixed(1);
+          const durationMin = Math.round(route.duration / 60);
+          
+          setDistance(`${distanceKm} km`);
+          setDuration(`${durationMin} min`);
+          onRouteInfo?.(`${distanceKm} km`, `${durationMin} min`);
         }
       } catch (error) {
         console.error('Error fetching route info:', error);
@@ -55,14 +56,12 @@ export function RouteInfo({ origin, destination, onRouteInfo }: RouteInfoProps) 
 
 const styles = StyleSheet.create({
   container: {
-    marginTop: 8,
-    marginBottom: 16,
-    padding: 12,
+    padding: 16,
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
+    marginTop: 8,
   },
   text: {
-    color: '#666',
     textAlign: 'center',
-  }
+  },
 });

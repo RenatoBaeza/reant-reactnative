@@ -1,58 +1,123 @@
-import { StyleSheet, View } from 'react-native';
-import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
-import { useTheme } from 'react-native-paper';
-import { useCallback, useRef } from 'react';
+import { StyleSheet, View, TextInput, FlatList, Pressable } from 'react-native';
+import { Text, ActivityIndicator } from 'react-native-paper';
+import { useState, useCallback, useEffect } from 'react';
+import debounce from 'lodash/debounce';
 
 interface PlacesAutocompleteInputProps {
   label: string;
   value: string;
-  onPlaceSelect: (data: any, details: any) => void;
+  onPlaceSelect: (place: {
+    description: string;
+    geometry: {
+      location: {
+        lat: number;
+        lng: number;
+      }
+    }
+  }) => void;
 }
+
+const NOMINATIM_BASE_URL = 'https://nominatim.openstreetmap.org/search';
 
 export function PlacesAutocompleteInput({ 
   label, 
   value, 
   onPlaceSelect 
 }: PlacesAutocompleteInputProps) {
-  const theme = useTheme();
-  const autoCompleteRef = useRef(null);
+  const [query, setQuery] = useState(value);
+  const [results, setResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handlePlaceSelect = useCallback((data, details) => {
-    onPlaceSelect(data, details);
-  }, [onPlaceSelect]);
+  const searchPlaces = useCallback(
+    debounce(async (searchQuery: string) => {
+      if (searchQuery.length < 3) {
+        setResults([]);
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const response = await fetch(
+          `${NOMINATIM_BASE_URL}?format=json&q=${encodeURIComponent(
+            searchQuery
+          )}&limit=5`,
+          {
+            headers: {
+              'Accept': 'application/json',
+              'User-Agent': 'ReantApp/1.0'
+            }
+          }
+        );
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Received non-JSON response from server');
+        }
+
+        const data = await response.json();
+        setResults(data);
+      } catch (error) {
+        console.error('Error searching places:', error);
+        setResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 300),
+    []
+  );
+
+  useEffect(() => {
+    searchPlaces(query);
+  }, [query]);
+
+  const handleSelect = (place: any) => {
+    setQuery(place.display_name);
+    setResults([]);
+    onPlaceSelect({
+      description: place.display_name,
+      geometry: {
+        location: {
+          lat: parseFloat(place.lat),
+          lng: parseFloat(place.lon)
+        }
+      }
+    });
+  };
 
   return (
     <View style={styles.container}>
-      <GooglePlacesAutocomplete
-        ref={autoCompleteRef}
+      <TextInput
+        style={styles.input}
         placeholder={label}
-        onPress={handlePlaceSelect}
-        query={{
-          key: process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY,
-          language: 'en',
-        }}
-        defaultValue={value}
-        styles={{
-          container: styles.autoCompleteContainer,
-          textInput: {
-            ...styles.textInput,
-            backgroundColor: theme.colors.background,
-            color: theme.colors.onBackground,
-          },
-          listView: styles.listView,
-          row: styles.row,
-        }}
-        enablePoweredByContainer={false}
-        fetchDetails={true}
-        nearbyPlacesAPI="GooglePlacesSearch"
-        debounce={300}
-        minLength={2}
-        returnKeyType="search"
-        listViewDisplayed="auto"
-        textInputProps={{
-          clearButtonMode: 'while-editing',
-        }}
+        value={query}
+        onChangeText={setQuery}
       />
+      
+      {isLoading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="small" />
+        </View>
+      )}
+
+      {results.length > 0 && (
+        <FlatList
+          data={results}
+          style={styles.resultsList}
+          keyExtractor={(item) => item.place_id}
+          renderItem={({ item }) => (
+            <Pressable
+              style={styles.resultItem}
+              onPress={() => handleSelect(item)}
+            >
+              <Text>{item.display_name}</Text>
+            </Pressable>
+          )}
+        />
+      )}
     </View>
   );
 }
@@ -62,18 +127,21 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     position: 'relative',
   },
-  autoCompleteContainer: {
-    flex: 0,
-  },
-  textInput: {
+  input: {
     height: 56,
     borderWidth: 1,
     borderColor: '#86939e',
     borderRadius: 4,
     paddingHorizontal: 12,
     fontSize: 16,
+    backgroundColor: 'white',
   },
-  listView: {
+  loadingContainer: {
+    position: 'absolute',
+    right: 12,
+    top: 16,
+  },
+  resultsList: {
     position: 'absolute',
     top: 56,
     left: 0,
@@ -82,9 +150,11 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     zIndex: 9999,
     elevation: 9999,
+    maxHeight: 200,
   },
-  row: {
-    padding: 13,
-    minHeight: 44,
+  resultItem: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
 });
