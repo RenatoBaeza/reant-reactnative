@@ -4,6 +4,8 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 import { PlacesAutocompleteInput } from './PlacesAutocompleteInput';
 import { DatePickerInput } from './DatePickerInput';
 import { RouteInfo } from './RouteInfo';
+import { useRouter } from 'expo-router';
+import { format } from 'date-fns';
 
 interface PassengerFormData {
   origin: string;
@@ -24,6 +26,8 @@ interface PassengerFormProps {
 }
 
 export function PassengerForm({ form, onFormChange }: PassengerFormProps) {
+  const router = useRouter();
+
   return (
     <Animated.View 
       entering={FadeInUp.delay(200)}
@@ -92,7 +96,22 @@ export function PassengerForm({ form, onFormChange }: PassengerFormProps) {
           placeholder="Enter number of seats (1-9)"
         />
 
-        <Button mode="contained" style={styles.submitButton}>
+        <Button 
+          mode="contained" 
+          style={styles.submitButton}
+          onPress={() => {
+            const searchDate = format(form.date, 'yyyy-MM-dd');
+            router.push({
+              pathname: '/home/rides-available',
+              params: {
+                origin: form.origin,
+                destination: form.destination,
+                date: searchDate,
+                seats: form.seats || 1,
+              }
+            });
+          }}
+        >
           Search Rides
         </Button>
       </Surface>
