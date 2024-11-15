@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/clerk-expo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { format } from 'date-fns';
+import { FlatList } from 'react-native';
 
 const API_URL = Platform.select({
   android: 'http://10.0.2.2:8000/rides',
@@ -114,6 +115,13 @@ export default function RidesAwaiting() {
     }
   };
 
+  const renderSeatItem = ({ item, index }: { item: number; index: number }) => (
+    <Surface style={styles.seatCard} elevation={1}>
+      <Text variant="bodyLarge">Seat {index + 1}</Text>
+      <Text variant="bodyMedium" style={styles.seatStatus}>Available</Text>
+    </Surface>
+  );
+
   if (loading || !ride) {
     return (
       <View style={styles.container}>
@@ -197,6 +205,17 @@ export default function RidesAwaiting() {
         </View>
       </Surface>
 
+      <View style={styles.seatsSection}>
+        <Text variant="titleLarge" style={styles.seatsTitle}>Available Seats</Text>
+        <FlatList
+          data={[...Array(ride.available_seats)]}
+          renderItem={renderSeatItem}
+          keyExtractor={(_, index) => `seat-${index}`}
+          horizontal={false}
+          contentContainerStyle={styles.seatsList}
+        />
+      </View>
+
       {isDriver && (
         <Button 
           mode="contained" 
@@ -241,5 +260,38 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#FF5252',
     marginBottom: 16,
+  },
+  seatsSection: {
+    marginTop: 24,
+    flex: 1,
+  },
+  seatsTitle: {
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  seatsList: {
+    padding: 16,
+  },
+  seatCard: {
+    padding: 16,
+    marginBottom: 12,
+    borderRadius: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  seatStatus: {
+    color: '#4CAF50', // Green color for available status
+  },
+  rideDetails: {
+    padding: 16,
+  },
+  routeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 8,
+  },
+  arrow: {
+    marginHorizontal: 8,
   },
 });
