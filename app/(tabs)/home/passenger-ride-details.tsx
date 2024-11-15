@@ -1,5 +1,5 @@
 import { View, StyleSheet, Platform } from 'react-native';
-import { Text, Surface, Button, Portal, Modal } from 'react-native-paper';
+import { Text, Surface, Button, Portal, Modal, TextInput } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/clerk-expo';
@@ -13,10 +13,10 @@ const API_URL_GET = Platform.select({
   default: 'http://localhost:8000/rides/get-awaiting-ride-detail-passenger',
 });
 
-const API_URL_POST = Platform.select({
-  android: 'http://10.0.2.2:8000/rides/request-seat',
-  ios: 'http://localhost:8000/rides/request-seat',
-  default: 'http://localhost:8000/rides/request-seat',
+const API_URL_PUT = Platform.select({
+  android: 'http://10.0.2.2:8000/rides/reserve-seats',
+  ios: 'http://localhost:8000/rides/reserve-seats',
+  default: 'http://localhost:8000/rides/reserve-seats',
 });
 
 interface SeatDetail {
@@ -56,6 +56,9 @@ export default function PassengerRideDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [selectedSeats, setSelectedSeats] = useState(
+    parseInt(useLocalSearchParams().seats as string) || 1
+  );
 
   useEffect(() => {
     fetchRideDetails();
@@ -91,30 +94,30 @@ export default function PassengerRideDetails() {
       if (!userEmail) {
         throw new Error('User email is required');
       }
-
-      const response = await fetch(`${API_URL_POST}/${id}`, {
-        method: 'POST',
+  
+      const response = await fetch(`${API_URL_PUT}/${id}?seats_requested=${selectedSeats}`, {
+        method: 'PUT',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'user-email': userEmail,
-        },
+          'passenger-email': userEmail,
+        }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || 'Failed to request seat');
-      }
-
+  
       const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to reserve seats');
+      }
+  
       if (data.status === 'ok') {
         router.replace('/home');
       } else {
         throw new Error('Invalid response from server');
       }
     } catch (err) {
-      console.error('Error requesting seat:', err);
-      setError(err instanceof Error ? err.message : 'Failed to request seat');
+      console.error('Error requesting seats:', err);
+      setError(err instanceof Error ? err.message : 'Failed to request seats');
     } finally {
       setShowConfirmation(false);
     }
@@ -159,6 +162,24 @@ export default function PassengerRideDetails() {
       </Surface>
     );
   };
+
+  const SeatSelector = () => (
+    <TextInput
+      mode="outlined"
+      label="Number of Seats"
+      value={selectedSeats.toString()}
+      onChangeText={(text) => {
+        // Only allow numbers 1-9
+        const numericValue = text.replace(/[^1-9]/g, '');
+        if (numericValue.length <= 1) {
+          setSelectedSeats(parseInt(numericValue) || 1);
+        }
+      }}
+      keyboardType="numeric"
+      style={styles.seatSelector}
+      placeholder="Enter number of seats (1-9)"
+    />
+  );
 
   if (loading || !ride) {
     return (
@@ -254,6 +275,10 @@ export default function PassengerRideDetails() {
         />
       </View>
 
+      <Surface style={styles.card} elevation={2}>
+        <SeatSelector />
+      </Surface>
+
       <Button 
         mode="contained" 
         onPress={() => setShowConfirmation(true)}
@@ -273,7 +298,9 @@ export default function PassengerRideDetails() {
               Request Seat
             </Text>
             <Text variant="bodyMedium" style={styles.modalText}>
-              Are you sure you want to request a seat for this ride?
+              Are you sure you want to request {selectedSeats} seat{selectedSeats > 1 ? 's' : ''} for this ride?
+              {ride.available_seats < selectedSeats && 
+                "\nWarning: Not enough seats available!"}
             </Text>
             <View style={styles.modalButtons}>
               <Button 
@@ -374,5 +401,8 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
+  },
+  seatSelector: {
+    marginTop: 24,
   },
 });

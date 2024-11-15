@@ -20,6 +20,24 @@ const API_URL_PUT = Platform.select({
   default: 'http://localhost:8000/rides/cancel-ride',
 });
 
+const API_URL_ACCEPT = Platform.select({
+  android: 'http://10.0.2.2:8000/rides/accept-passenger-seat',
+  ios: 'http://localhost:8000/rides/accept-passenger-seat',
+  default: 'http://localhost:8000/rides/accept-passenger-seat',
+});
+
+const API_URL_REMOVE = Platform.select({
+  android: 'http://10.0.2.2:8000/rides/remove-passenger',
+  ios: 'http://localhost:8000/rides/remove-passenger',
+  default: 'http://localhost:8000/rides/remove-passenger',
+});
+
+const API_URL_REMOVE_PASSENGER = Platform.select({
+  android: 'http://10.0.2.2:8000/rides/remove-passenger-seat',
+  ios: 'http://localhost:8000/rides/remove-passenger-seat',
+  default: 'http://localhost:8000/rides/remove-passenger-seat',
+});
+
 interface SeatDetail {
   seat_id: string;
   seat_number: number;
@@ -167,15 +185,128 @@ export default function RidesAwaiting() {
       }
     };
 
+    const handleAccept = async (seatId: string) => {
+      try {
+        const userEmail = user?.emailAddresses[0].emailAddress;
+        if (!userEmail) {
+          throw new Error('User email is required');
+        }
+
+        const response = await fetch(`${API_URL_ACCEPT}/${id}/${seatId}`, {
+          method: 'PUT',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'user-email': userEmail,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Failed to accept seat request');
+        }
+
+        const data = await response.json();
+        if (data.status === 'ok') {
+          // Refresh ride details to show updated seat status
+          fetchRideDetails();
+        } else {
+          throw new Error('Invalid response from server');
+        }
+      } catch (err) {
+        console.error('Error accepting seat:', err);
+        setError(err instanceof Error ? err.message : 'Failed to accept seat request');
+      }
+    };
+
+    const handleDecline = async (seatId: string) => {
+      try {
+        handleRemovePassenger(seatId);
+      } catch (err) {
+        console.error('Error declining seat:', err);
+        setError(err instanceof Error ? err.message : 'Failed to decline seat request');
+      }
+    };
+
+    const handleRemovePassenger = async (seatId: string) => {
+      try {
+        const userEmail = user?.emailAddresses[0].emailAddress;
+        if (!userEmail) {
+          throw new Error('User email is required');
+        }
+
+        const response = await fetch(`${API_URL_REMOVE_PASSENGER}/${id}/${seatId}`, {
+          method: 'PUT',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'user-email': userEmail,
+          },
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.detail || 'Failed to remove passenger');
+        }
+
+        const data = await response.json();
+        if (data.status === 'ok') {
+          fetchRideDetails();
+        } else {
+          throw new Error('Invalid response from server');
+        }
+      } catch (err) {
+        console.error('Error removing passenger:', err);
+        setError(err instanceof Error ? err.message : 'Failed to remove passenger');
+      }
+    };
+
     return (
       <Surface style={styles.seatCard} elevation={1}>
-        <Text variant="bodyLarge">Seat {item.seat_number}</Text>
-        <Text 
-          variant="bodyMedium" 
-          style={[styles.seatStatus, { color: getStatusColor(item.seat_status) }]}
-        >
-          {getStatusText(item.seat_status)}
-        </Text>
+        <View style={styles.seatInfo}>
+          <Text variant="bodyLarge">Seat {item.seat_number}</Text>
+          <Text 
+            variant="bodyMedium" 
+            style={[styles.seatStatus, { color: getStatusColor(item.seat_status) }]}
+          >
+            {getStatusText(item.seat_status)}
+          </Text>
+        </View>
+        
+        {item.passenger_email && (item.seat_status === 'taken' || item.seat_status === 'pending') && (
+          <View style={styles.passengerInfo}>
+            <View style={styles.passengerRow}>
+              <Text variant="bodySmall" style={styles.passengerEmail}>
+                Passenger: {item.passenger_email}
+              </Text>
+              <MaterialCommunityIcons 
+                name="account-remove" 
+                size={24} 
+                color="#FF5252"
+                onPress={() => handleRemovePassenger(item.seat_id)}
+                style={styles.removeIcon}
+              />
+            </View>
+            {item.seat_status === 'pending' && (
+              <View style={styles.actionButtons}>
+                <MaterialCommunityIcons 
+                  name="check-circle" 
+                  size={32} 
+                  color="#4CAF50"
+                  onPress={() => handleAccept(item.seat_id)}
+                  style={styles.actionIcon}
+                />
+                <MaterialCommunityIcons 
+                  name="close-circle" 
+                  size={32} 
+                  color="#FF5252"
+                  onPress={() => handleDecline(item.seat_id)}
+                  style={styles.actionIcon}
+                />
+              </View>
+            )}
+          </View>
+        )}
       </Surface>
     );
   };
@@ -366,9 +497,29 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderRadius: 8,
+  },
+  seatInfo: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 8,
+  },
+  passengerInfo: {
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    paddingTop: 8,
+  },
+  passengerEmail: {
+    color: '#666',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 16,
+    marginTop: 8,
+  },
+  actionIcon: {
+    padding: 4,
   },
   seatStatus: {
     color: '#4CAF50', // Green color for available status
@@ -408,5 +559,20 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     flex: 1,
+  },
+  pendingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  passengerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+  removeIcon: {
+    padding: 4,
   },
 });
