@@ -7,10 +7,17 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { format } from 'date-fns';
 import { FlatList } from 'react-native';
 
-const API_URL = Platform.select({
+
+const API_URL_GET = Platform.select({
   android: 'http://10.0.2.2:8000/rides/get-awaiting-ride-detail',
   ios: 'http://localhost:8000/rides/get-awaiting-ride-detail',
   default: 'http://localhost:8000/rides/get-awaiting-ride-detail',
+});
+
+const API_URL_PUT = Platform.select({
+  android: 'http://10.0.2.2:8000/rides/cancel-ride',
+  ios: 'http://localhost:8000/rides/cancel-ride',
+  default: 'http://localhost:8000/rides/cancel-ride',
 });
 
 interface RideDetails {
@@ -41,7 +48,6 @@ export default function RidesAwaiting() {
   const { id } = useLocalSearchParams();
   const { user } = useUser();
   const [ride, setRide] = useState<RideDetails | null>(null);
-  const [isDriver, setIsDriver] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
@@ -59,7 +65,7 @@ export default function RidesAwaiting() {
   
       console.log('Fetching ride details for ID:', id);
       
-      const response = await fetch(`${API_URL}/${id}`, {
+      const response = await fetch(`${API_URL_GET}/${id}`, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
@@ -77,7 +83,6 @@ export default function RidesAwaiting() {
       console.log('Ride details response:', JSON.stringify(responseData, null, 2));
       
       setRide(responseData.data);
-      setIsDriver(responseData.is_driver);
     } catch (err) {
       console.error('Error fetching ride details:', err);
       setError(err instanceof Error ? err.message : 'Failed to load ride details');
@@ -89,23 +94,28 @@ export default function RidesAwaiting() {
   const handleCancelConfirm = async () => {
     try {
       const userEmail = user?.emailAddresses[0].emailAddress;
-      const response = await fetch(`${API_URL}/${id}/cancel-ride`, {
+      if (!userEmail) {
+        throw new Error('User email is required');
+      }
+
+      const response = await fetch(`${API_URL_PUT}/${id}`, {
         method: 'PUT',
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'user-email': userEmail ?? '',
+          'user-email': userEmail,
         },
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`Failed to cancel ride: ${errorText}`);
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to cancel ride');
       }
 
       const data = await response.json();
       if (data.status === 'ok') {
+        // Show success message (optional)
+        // Navigate back to rides list
         router.replace('/rides');
       } else {
         throw new Error('Invalid response from server');
@@ -159,7 +169,7 @@ export default function RidesAwaiting() {
       </Button>
 
       <Text variant="headlineMedium" style={styles.title}>
-        {isDriver ? 'Your Ride' : 'Ride Details'}
+        Ride Details
       </Text>
 
       {error && (
@@ -219,16 +229,14 @@ export default function RidesAwaiting() {
         />
       </View>
 
-      {isDriver && (
-        <Button 
-          mode="contained" 
-          onPress={() => setShowCancelConfirmation(true)}
-          style={styles.cancelButton}
-          buttonColor="#FF5252"
-        >
-          Cancel Ride
-        </Button>
-      )}
+      <Button 
+        mode="contained" 
+        onPress={() => setShowCancelConfirmation(true)}
+        style={styles.cancelButton}
+        buttonColor="#FF5252"
+      >
+        Cancel Ride
+      </Button>
 
       <Portal>
         <Modal
