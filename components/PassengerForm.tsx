@@ -15,6 +15,7 @@ interface PassengerFormData {
   date: Date;
   distance?: string;
   duration?: string;
+  seats: number;
 }
 
 interface PassengerFormProps {
@@ -74,6 +75,23 @@ export function PassengerForm({ form, onFormChange }: PassengerFormProps) {
           onChange={(date) => onFormChange({ ...form, date })}
           style={styles.input}
         />
+
+        <TextInput
+          mode="outlined"
+          label="Requested Seats"
+          value={form.seats}
+          onChangeText={(text) => {
+            // Only allow numbers 1-9
+            const numericValue = text.replace(/[^1-9]/g, '');
+            if (numericValue.length <= 1) {
+              onFormChange({ ...form, seats: numericValue });
+            }
+          }}
+          keyboardType="numeric"
+          style={styles.input}
+          placeholder="Enter number of seats (1-9)"
+        />
+
         <Button mode="contained" style={styles.submitButton}>
           Search Rides
         </Button>
