@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, FlatList, Platform } from 'react-native';
 import { Text, Button, ActivityIndicator } from 'react-native-paper';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { useUser } from '@clerk/clerk-expo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -22,14 +22,18 @@ interface Vehicle {
 
 export default function VehicleList() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user } = useUser();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchVehicles();
-  }, []);
+    if (pathname === '/profile/vehicle-list') {
+      console.log('Vehicle list screen mounted - fetching latest vehicles');
+      fetchVehicles();
+    }
+  }, [pathname]);
 
   const fetchVehicles = async () => {
     try {
