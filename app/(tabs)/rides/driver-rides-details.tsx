@@ -9,9 +9,9 @@ import { FlatList } from 'react-native';
 
 
 const API_URL_GET = Platform.select({
-  android: 'http://10.0.2.2:8000/rides/get-awaiting-ride-detail',
-  ios: 'http://localhost:8000/rides/get-awaiting-ride-detail',
-  default: 'http://localhost:8000/rides/get-awaiting-ride-detail',
+  android: 'http://10.0.2.2:8000/rides/get-ride',
+  ios: 'http://localhost:8000/rides/get-ride',
+  default: 'http://localhost:8000/rides/get-ride',
 });
 
 const API_URL_PUT = Platform.select({
@@ -83,7 +83,7 @@ const hasAnyTakenSeats = (seatsDetails: SeatsDetails): boolean => {
   return Object.values(seatsDetails).some(seat => seat.seat_status === 'taken');
 };
 
-export default function RidesAwaiting() {
+export default function DriverRidesDetails() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { user } = useUser();

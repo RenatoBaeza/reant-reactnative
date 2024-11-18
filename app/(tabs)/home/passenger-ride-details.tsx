@@ -8,9 +8,9 @@ import { format } from 'date-fns';
 import { FlatList } from 'react-native';
 
 const API_URL_GET = Platform.select({
-  android: 'http://10.0.2.2:8000/rides/get-awaiting-ride-detail-passenger',
-  ios: 'http://localhost:8000/rides/get-awaiting-ride-detail-passenger',
-  default: 'http://localhost:8000/rides/get-awaiting-ride-detail-passenger',
+  android: 'http://10.0.2.2:8000/rides/get-ride-detail-passenger',
+  ios: 'http://localhost:8000/rides/get-ride-detail-passenger',
+  default: 'http://localhost:8000/rides/get-ride-detail-passenger',
 });
 
 const API_URL_PUT = Platform.select({

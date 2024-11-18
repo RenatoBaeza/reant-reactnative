@@ -7,35 +7,29 @@ import { useUser } from '@clerk/clerk-expo';
 import { format } from 'date-fns';
 import { Platform } from 'react-native';
 
-const API_URLS = {
-  awaiting: Platform.select({
-    android: 'http://10.0.2.2:8000/rides/get-awaiting-rides',
-    ios: 'http://localhost:8000/rides/get-awaiting-rides',
-    default: 'http://localhost:8000/rides/get-awaiting-rides',
-  }),
-  confirmed: Platform.select({
-    android: 'http://10.0.2.2:8000/rides/get-confirmed-rides',
-    ios: 'http://localhost:8000/rides/get-confirmed-rides',
-    default: 'http://localhost:8000/rides/get-confirmed-rides',
-  }),
-  active: Platform.select({
-    android: 'http://10.0.2.2:8000/rides/get-active-rides',
-    ios: 'http://localhost:8000/rides/get-active-rides',
-    default: 'http://localhost:8000/rides/get-active-rides',
-  }),
-  cancelled: Platform.select({
-    android: 'http://10.0.2.2:8000/rides/get-cancelled-rides',
-    ios: 'http://localhost:8000/rides/get-cancelled-rides',
-    default: 'http://localhost:8000/rides/get-cancelled-rides',
-  }),
-};
+const API_URL = Platform.select({
+  android: 'http://10.0.2.2:8000/rides/get-rides',
+  ios: 'http://localhost:8000/rides/get-rides',
+  default: 'http://localhost:8000/rides/get-rides',
+});
 
 interface RideDetails {
   ride_id: string;
+  driver_email: string;
+  vehicle_id: string;
   origin: string;
   destination: string;
   available_seats: number;
   ride_start_datetime: string;
+  ride_status: 'awaiting' | 'confirmed' | 'active' | 'cancelled';
+  seats_details: SeatsDetails;
+  vehicle_details?: {
+    car_brand: string;
+    car_model: string;
+    car_year: string;
+    car_color: string;
+    car_license_plate: string;
+  };
 }
 
 interface Section {
@@ -66,50 +60,36 @@ export default function Rides() {
         throw new Error('User email is required');
       }
 
-      console.log('Fetching rides with URLs:', {
-        awaiting: API_URLS.awaiting,
-        confirmed: API_URLS.confirmed,
-        active: API_URLS.active,
-        cancelled: API_URLS.cancelled
-      });
-
       const headers = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'user-email': userEmail,
       };
 
-      // Add loading state while fetching
       setLoading(true);
       setError(null);
 
-      const [awaitingRes, confirmedRes, activeRes, cancelledRes] = await Promise.all([
-        fetch(API_URLS.awaiting, { headers }),
-        fetch(API_URLS.confirmed, { headers }),
-        fetch(API_URLS.active, { headers }),
-        fetch(API_URLS.cancelled, { headers }),
-      ]);
+      const response = await fetch(API_URL, { headers });
+      const data = await response.json();
 
-      const [awaitingData, confirmedData, activeData, cancelledData] = await Promise.all([
-        awaitingRes.json(),
-        confirmedRes.json(),
-        activeRes.json(),
-        cancelledRes.json(),
-      ]);
+      if (!response.ok) {
+        throw new Error(data.detail || 'Failed to fetch rides');
+      }
 
-      console.log('Rides data fetched:', {
-        awaiting: awaitingData,
-        confirmed: confirmedData,
-        active: activeData,
-        cancelled: cancelledData
-      });
+      if (data.status === 'ok') {
+        // Filter rides based on their status
+        const awaitingRides = data.data.filter(ride => ride.ride_status === 'awaiting');
+        const confirmedRides = data.data.filter(ride => ride.ride_status === 'confirmed');
+        const activeRides = data.data.filter(ride => ride.ride_status === 'active');
+        const cancelledRides = data.data.filter(ride => ride.ride_status === 'cancelled');
 
-      setSections([
-        { title: 'Awaiting Rides', data: awaitingData.status === 'ok' ? awaitingData.data : [] },
-        { title: 'Confirmed Rides', data: confirmedData.status === 'ok' ? confirmedData.data : [] },
-        { title: 'Active Rides', data: activeData.status === 'ok' ? activeData.data : [] },
-        { title: 'Cancelled Rides', data: cancelledData.status === 'ok' ? cancelledData.data : [] },
-      ]);
+        setSections([
+          { title: 'Awaiting Rides', data: awaitingRides },
+          { title: 'Confirmed Rides', data: confirmedRides },
+          { title: 'Active Rides', data: activeRides },
+          { title: 'Cancelled Rides', data: cancelledRides },
+        ]);
+      }
     } catch (err) {
       console.error('Error fetching rides:', err);
       setError(err instanceof Error ? err.message : 'Failed to load rides');
@@ -122,7 +102,7 @@ export default function Rides() {
     return (
       <Surface style={styles.card} elevation={1}>
         <Pressable 
-          onPress={() => router.push(`/rides/rides-awaiting?id=${item.id}`)}
+          onPress={() => router.push(`/rides/driver-rides-details?id=${item.ride_id}`)}
           style={({ pressed }) => [
             styles.pressable,
             pressed && styles.pressed

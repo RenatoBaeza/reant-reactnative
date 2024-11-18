@@ -102,7 +102,7 @@ export function DriverForm({ form, onFormChange }: DriverFormProps) {
         
         // Add a small delay before navigation
         setTimeout(() => {
-          router.push(`/rides/rides-awaiting?id=${data.data.ride_id}`);
+          router.push(`/rides/driver-rides-details?id=${data.data.ride_id}`);
         }, 500);
       }
     } catch (error) {
