@@ -17,6 +17,7 @@ interface RideDetails {
   destination: string;
   available_seats: number;
   ride_start_datetime: string;
+  ride_status: 'awaiting' | 'confirmed' | 'active' | 'cancelled' | 'complete';
 }
 
 export function PassengerRidesList() {
@@ -52,7 +53,10 @@ export function PassengerRidesList() {
 
       const data = await response.json();
       if (data.status === "ok") {
-        setRides(data.data || []);
+        const sortedRides = (data.data || []).sort((a, b) => 
+          new Date(b.ride_start_datetime).getTime() - new Date(a.ride_start_datetime).getTime()
+        );
+        setRides(sortedRides);
       } else {
         throw new Error('Invalid response format');
       }
@@ -67,6 +71,23 @@ export function PassengerRidesList() {
   const renderRideItem = ({ item }: { item: RideDetails }) => {
     const datetime = new Date(item.ride_start_datetime);
 
+    const getStatusColor = (status: string) => {
+      switch (status) {
+        case 'awaiting':
+          return '#FFC107'; // Yellow
+        case 'confirmed':
+          return '#4CAF50'; // Green
+        case 'active':
+          return '#2196F3'; // Blue
+        case 'cancelled':
+          return '#FF5252'; // Red
+        case 'complete':
+          return '#666666'; // Gray
+        default:
+          return '#666666';
+      }
+    };
+
     return (
       <Pressable onPress={() => router.push(`/home/passenger-ride-details?id=${item.ride_id}`)}>
         <Surface style={styles.rideCard} elevation={1}>
@@ -76,9 +97,17 @@ export function PassengerRidesList() {
             <Text variant="titleMedium" numberOfLines={1}>{item.destination}</Text>
           </View>
           <View style={styles.detailsContainer}>
-            <Text variant="bodyMedium">
-              {format(datetime, 'MMM d, yyyy • h:mm a')}
-            </Text>
+            <View>
+              <Text variant="bodyMedium">
+                {format(datetime, 'MMM d, yyyy • h:mm a')}
+              </Text>
+              <Text 
+                variant="bodyMedium" 
+                style={[styles.statusText, { color: getStatusColor(item.ride_status) }]}
+              >
+                {item.ride_status.charAt(0).toUpperCase() + item.ride_status.slice(1)}
+              </Text>
+            </View>
             <Text variant="bodyMedium">
               {item.available_seats} seats available
             </Text>
@@ -142,7 +171,7 @@ const styles = StyleSheet.create({
   detailsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   errorText: {
     color: '#FF5252',
@@ -155,5 +184,9 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 24,
     paddingHorizontal: 16,
+  },
+  statusText: {
+    marginTop: 4,
+    fontWeight: '500',
   },
 });

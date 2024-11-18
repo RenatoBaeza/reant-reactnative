@@ -356,7 +356,9 @@ export default function PassengerRideDetails() {
         />
       </View>
 
-      {hasUserRequestedSeats(ride.seats_details, user?.emailAddresses[0].emailAddress || '') ? (
+      {hasUserRequestedSeats(ride.seats_details, user?.emailAddresses[0].emailAddress || '') && 
+        ride.ride_status !== 'active' && 
+        ride.ride_status !== 'complete' ? (
         <Button 
           mode="contained"
           onPress={() => setShowCancelConfirmation(true)}
@@ -366,19 +368,21 @@ export default function PassengerRideDetails() {
           Cancel Seat Request
         </Button>
       ) : (
-        <>
-          <Surface style={styles.card} elevation={2}>
-            <SeatSelector />
-          </Surface>
+        ride.ride_status !== 'active' && ride.ride_status !== 'complete' && (
+          <>
+            <Surface style={styles.card} elevation={2}>
+              <SeatSelector />
+            </Surface>
 
-          <Button 
-            mode="contained" 
-            onPress={() => setShowConfirmation(true)}
-            style={styles.requestButton}
-          >
-            Request Seat
-          </Button>
-        </>
+            <Button 
+              mode="contained" 
+              onPress={() => setShowConfirmation(true)}
+              style={styles.requestButton}
+            >
+              Request Seat
+            </Button>
+          </>
+        )
       )}
 
       <Portal>

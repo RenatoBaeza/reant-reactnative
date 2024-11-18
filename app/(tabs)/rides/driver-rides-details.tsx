@@ -122,6 +122,7 @@ export default function DriverRidesDetails() {
   const [error, setError] = useState<string | null>(null);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
   const [showCompleteConfirmation, setShowCompleteConfirmation] = useState(false);
+  const [showConfirmRideConfirmation, setShowConfirmRideConfirmation] = useState(false);
 
   useEffect(() => {
     console.log('Ride ID received:', id);
@@ -199,6 +200,7 @@ export default function DriverRidesDetails() {
       setError(err instanceof Error ? err.message : 'Failed to cancel ride');
     } finally {
       setShowCancelConfirmation(false);
+      router.replace('/rides');
     }
   };
 
@@ -226,7 +228,6 @@ export default function DriverRidesDetails() {
       const data = await response.json();
       if (data.status === 'ok') {
         await fetchRideDetails();
-        router.replace('/rides');
       } else {
         throw new Error('Invalid response from server');
       }
@@ -333,7 +334,7 @@ export default function DriverRidesDetails() {
       }
     };
 
-    const canRemovePassenger = ride.ride_status !== 'active' && ride.ride_status !== 'complete';
+    const canRemovePassenger = ride.ride_status === 'awaiting';
 
     const handleAccept = async (seatId: string) => {
       try {
@@ -571,7 +572,7 @@ export default function DriverRidesDetails() {
       {hasAnyTakenSeats(ride.seats_details) && ride.ride_status === 'awaiting' && (
         <Button 
           mode="contained" 
-          onPress={handleConfirmRide}
+          onPress={() => setShowConfirmRideConfirmation(true)}
           style={[styles.confirmButton, { backgroundColor: '#2196F3' }]}
           buttonColor="#2196F3"
           contentStyle={{ backgroundColor: '#2196F3' }}
@@ -600,11 +601,14 @@ export default function DriverRidesDetails() {
           onPress={() => setShowCompleteConfirmation(true)}
           style={[styles.confirmButton, { backgroundColor: '#4CAF50' }]}
           buttonColor="#4CAF50"
+          contentStyle={{ backgroundColor: '#4CAF50' }}
+          theme={{ colors: { primary: '#4CAF50' } }}
         >
           Complete Ride
         </Button>
       ) : (
-        ride.ride_status !== 'complete' && (
+        ride.ride_status !== 'complete' && 
+        ride.ride_status !== 'cancelled' && (
           <Button 
             mode="contained" 
             onPress={() => setShowCancelConfirmation(true)}
@@ -678,6 +682,43 @@ export default function DriverRidesDetails() {
                 buttonColor="#4CAF50"
               >
                 Yes, Complete
+              </Button>
+            </View>
+          </Surface>
+        </Modal>
+      </Portal>
+
+      <Portal>
+        <Modal
+          visible={showConfirmRideConfirmation}
+          onDismiss={() => setShowConfirmRideConfirmation(false)}
+          contentContainerStyle={styles.modalContainer}
+        >
+          <Surface style={styles.modalContent}>
+            <Text variant="headlineSmall" style={styles.modalTitle}>
+              Confirm Ride
+            </Text>
+            <Text variant="bodyMedium" style={styles.modalText}>
+              Are you sure you want to confirm this ride? This will lock in the current passengers.
+            </Text>
+            <View style={styles.modalButtons}>
+              <Button 
+                mode="outlined" 
+                onPress={() => setShowConfirmRideConfirmation(false)}
+                style={styles.modalButton}
+              >
+                Cancel
+              </Button>
+              <Button 
+                mode="contained"
+                onPress={() => {
+                  handleConfirmRide();
+                  setShowConfirmRideConfirmation(false);
+                }}
+                style={styles.modalButton}
+                buttonColor="#2196F3"
+              >
+                Confirm
               </Button>
             </View>
           </Surface>
