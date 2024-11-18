@@ -1,4 +1,4 @@
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet, Platform, ActivityIndicator } from 'react-native';
 import { Text, Surface, Button, Portal, Modal } from 'react-native-paper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -38,6 +38,12 @@ const API_URL_REMOVE_PASSENGER = Platform.select({
   default: 'http://localhost:8000/rides/remove-passenger-seat',
 });
 
+const API_URL_CONFIRM = Platform.select({
+  android: 'http://10.0.2.2:8000/rides/driver-confirms-ride',
+  ios: 'http://localhost:8000/rides/driver-confirms-ride',
+  default: 'http://localhost:8000/rides/driver-confirms-ride',
+});
+
 interface SeatDetail {
   seat_id: string;
   seat_number: number;
@@ -73,6 +79,10 @@ interface RideResponse {
   is_driver: boolean;
 }
 
+const hasAnyTakenSeats = (seatsDetails: SeatsDetails): boolean => {
+  return Object.values(seatsDetails).some(seat => seat.seat_status === 'taken');
+};
+
 export default function RidesAwaiting() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
@@ -83,7 +93,10 @@ export default function RidesAwaiting() {
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
   useEffect(() => {
-    fetchRideDetails();
+    console.log('Ride ID received:', id);
+    if (id) {
+      fetchRideDetails();
+    }
   }, [id]);
 
   const fetchRideDetails = async () => {
@@ -155,6 +168,40 @@ export default function RidesAwaiting() {
       setError(err instanceof Error ? err.message : 'Failed to cancel ride');
     } finally {
       setShowCancelConfirmation(false);
+    }
+  };
+
+  const handleConfirmRide = async () => {
+    try {
+      const userEmail = user?.emailAddresses[0].emailAddress;
+      if (!userEmail) {
+        throw new Error('User email is required');
+      }
+
+      const response = await fetch(`${API_URL_CONFIRM}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'user-email': userEmail,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to confirm ride');
+      }
+
+      const data = await response.json();
+      if (data.status === 'ok') {
+        await fetchRideDetails();
+        router.replace('/rides');
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } catch (err) {
+      console.error('Error confirming ride:', err);
+      setError(err instanceof Error ? err.message : 'Failed to confirm ride');
     }
   };
 
@@ -311,20 +358,18 @@ export default function RidesAwaiting() {
     );
   };
 
-  if (loading || !ride) {
+  if (loading) {
     return (
-      <View style={styles.container}>
-        <Button 
-        mode="text" 
-        onPress={() => router.back()}
-        style={styles.backButton}
-        icon={() => (
-          <MaterialCommunityIcons name="arrow-left" size={20} />
-        )}
-      >
-        Back
-      </Button>
-        <Text>Loading ride details...</Text>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text variant="bodyLarge" style={styles.errorText}>{error}</Text>
       </View>
     );
   }
@@ -404,6 +449,19 @@ export default function RidesAwaiting() {
           contentContainerStyle={styles.seatsList}
         />
       </View>
+
+      {hasAnyTakenSeats(ride.seats_details) && (
+        <Button 
+          mode="contained" 
+          onPress={handleConfirmRide}
+          style={[styles.confirmButton, { backgroundColor: '#2196F3' }]}
+          buttonColor="#2196F3"
+          contentStyle={{ backgroundColor: '#2196F3' }}
+          theme={{ colors: { primary: '#2196F3' } }}
+        >
+          Confirm Ride
+        </Button>
+      )}
 
       <Button 
         mode="contained" 
@@ -574,5 +632,19 @@ const styles = StyleSheet.create({
   },
   removeIcon: {
     padding: 4,
+  },
+  confirmButton: {
+    marginBottom: 12,
+    backgroundColor: '#2196F3',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

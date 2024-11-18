@@ -19,6 +19,12 @@ const API_URL_PUT = Platform.select({
   default: 'http://localhost:8000/rides/reserve-seats',
 });
 
+const API_URL_CANCEL = Platform.select({
+  android: 'http://10.0.2.2:8000/rides/cancel-seat-reservation',
+  ios: 'http://localhost:8000/rides/cancel-seat-reservation',
+  default: 'http://localhost:8000/rides/cancel-seat-reservation',
+});
+
 interface SeatDetail {
   seat_id: string;
   seat_number: number;
@@ -56,9 +62,8 @@ export default function PassengerRideDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const [selectedSeats, setSelectedSeats] = useState(
-    parseInt(useLocalSearchParams().seats as string) || 1
-  );
+  const [selectedSeats, setSelectedSeats] = useState<number | null>(null);
+  const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
 
   useEffect(() => {
     fetchRideDetails();
@@ -94,7 +99,7 @@ export default function PassengerRideDetails() {
       if (!userEmail) {
         throw new Error('User email is required');
       }
-  
+
       const response = await fetch(`${API_URL_PUT}/${id}?seats_requested=${selectedSeats}`, {
         method: 'PUT',
         headers: {
@@ -103,15 +108,16 @@ export default function PassengerRideDetails() {
           'passenger-email': userEmail,
         }
       });
-  
+
       const data = await response.json();
-  
+
       if (!response.ok) {
         throw new Error(data.detail || 'Failed to reserve seats');
       }
-  
+
       if (data.status === 'ok') {
-        router.replace('/home');
+        await fetchRideDetails();
+        setShowConfirmation(false);
       } else {
         throw new Error('Invalid response from server');
       }
@@ -120,6 +126,41 @@ export default function PassengerRideDetails() {
       setError(err instanceof Error ? err.message : 'Failed to request seats');
     } finally {
       setShowConfirmation(false);
+    }
+  };
+
+  const handleCancelReservation = async () => {
+    try {
+      const userEmail = user?.emailAddresses[0].emailAddress;
+      if (!userEmail) {
+        throw new Error('User email is required');
+      }
+
+      const response = await fetch(`${API_URL_CANCEL}/${ride.ride_id}`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'passenger-email': userEmail,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to cancel reservation');
+      }
+
+      const data = await response.json();
+      if (data.status === 'ok') {
+        await fetchRideDetails();
+        setShowCancelConfirmation(false);
+        router.replace('/home');
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } catch (err) {
+      console.error('Error canceling reservation:', err);
+      setError(err instanceof Error ? err.message : 'Failed to cancel reservation');
     }
   };
 
@@ -137,14 +178,16 @@ export default function PassengerRideDetails() {
       }
     };
 
-    const getStatusText = (status: string) => {
+    const getStatusText = (status: string, passengerEmail: string | null) => {
+      const isCurrentUser = passengerEmail === user?.emailAddresses[0].emailAddress;
+      
       switch (status) {
         case 'free':
           return 'Available';
         case 'taken':
-          return 'Taken';
+          return isCurrentUser ? 'Taken (By you)' : 'Taken';
         case 'pending':
-          return 'Pending';
+          return isCurrentUser ? 'Pending (By you)' : 'Pending';
         default:
           return 'Unknown';
       }
@@ -157,7 +200,7 @@ export default function PassengerRideDetails() {
           variant="bodyMedium" 
           style={[styles.seatStatus, { color: getStatusColor(item.seat_status) }]}
         >
-          {getStatusText(item.seat_status)}
+          {getStatusText(item.seat_status, item.passenger_email)}
         </Text>
       </Surface>
     );
@@ -167,12 +210,19 @@ export default function PassengerRideDetails() {
     <TextInput
       mode="outlined"
       label="Number of Seats"
-      value={selectedSeats.toString()}
+      value={selectedSeats ? selectedSeats.toString() : ''}
       onChangeText={(text) => {
-        // Only allow numbers 1-9
+        if (text === '') {
+          setSelectedSeats(null);
+          return;
+        }
+        
         const numericValue = text.replace(/[^1-9]/g, '');
         if (numericValue.length <= 1) {
-          setSelectedSeats(parseInt(numericValue) || 1);
+          const newValue = parseInt(numericValue);
+          if (!isNaN(newValue)) {
+            setSelectedSeats(newValue);
+          }
         }
       }}
       keyboardType="numeric"
@@ -180,6 +230,13 @@ export default function PassengerRideDetails() {
       placeholder="Enter number of seats (1-9)"
     />
   );
+
+  const hasUserRequestedSeats = (seatsDetails: SeatsDetails, userEmail: string): boolean => {
+    return Object.values(seatsDetails).some(
+      seat => seat.passenger_email === userEmail && 
+      (seat.seat_status === 'pending' || seat.seat_status === 'taken')
+    );
+  };
 
   if (loading || !ride) {
     return (
@@ -275,17 +332,30 @@ export default function PassengerRideDetails() {
         />
       </View>
 
-      <Surface style={styles.card} elevation={2}>
-        <SeatSelector />
-      </Surface>
+      {hasUserRequestedSeats(ride.seats_details, user?.emailAddresses[0].emailAddress || '') ? (
+        <Button 
+          mode="contained"
+          onPress={() => setShowCancelConfirmation(true)}
+          style={styles.cancelButton}
+          buttonColor="#FF5252"
+        >
+          Cancel Seat Request
+        </Button>
+      ) : (
+        <>
+          <Surface style={styles.card} elevation={2}>
+            <SeatSelector />
+          </Surface>
 
-      <Button 
-        mode="contained" 
-        onPress={() => setShowConfirmation(true)}
-        style={styles.requestButton}
-      >
-        Request Seat
-      </Button>
+          <Button 
+            mode="contained" 
+            onPress={() => setShowConfirmation(true)}
+            style={styles.requestButton}
+          >
+            Request Seat
+          </Button>
+        </>
+      )}
 
       <Portal>
         <Modal
@@ -298,8 +368,10 @@ export default function PassengerRideDetails() {
               Request Seat
             </Text>
             <Text variant="bodyMedium" style={styles.modalText}>
-              Are you sure you want to request {selectedSeats} seat{selectedSeats > 1 ? 's' : ''} for this ride?
-              {ride.available_seats < selectedSeats && 
+              {selectedSeats 
+                ? `Are you sure you want to request ${selectedSeats} seat${selectedSeats > 1 ? 's' : ''} for this ride?`
+                : 'Please select the number of seats you want to request.'}
+              {selectedSeats && ride.available_seats < selectedSeats && 
                 "\nWarning: Not enough seats available!"}
             </Text>
             <View style={styles.modalButtons}>
@@ -316,6 +388,40 @@ export default function PassengerRideDetails() {
                 style={styles.modalButton}
               >
                 Confirm
+              </Button>
+            </View>
+          </Surface>
+        </Modal>
+      </Portal>
+
+      <Portal>
+        <Modal
+          visible={showCancelConfirmation}
+          onDismiss={() => setShowCancelConfirmation(false)}
+          contentContainerStyle={styles.modalContainer}
+        >
+          <Surface style={styles.modalContent}>
+            <Text variant="headlineSmall" style={styles.modalTitle}>
+              Cancel Seat Request
+            </Text>
+            <Text variant="bodyMedium" style={styles.modalText}>
+              Are you sure you want to cancel your seat request? This action cannot be undone.
+            </Text>
+            <View style={styles.modalButtons}>
+              <Button 
+                mode="outlined" 
+                onPress={() => setShowCancelConfirmation(false)}
+                style={styles.modalButton}
+              >
+                No, Keep Request
+              </Button>
+              <Button 
+                mode="contained"
+                onPress={handleCancelReservation}
+                style={styles.modalButton}
+                buttonColor="#FF5252"
+              >
+                Yes, Cancel
               </Button>
             </View>
           </Surface>
@@ -404,5 +510,9 @@ const styles = StyleSheet.create({
   },
   seatSelector: {
     marginTop: 24,
+  },
+  cancelButton: {
+    marginTop: 24,
+    backgroundColor: '#FF5252',
   },
 });

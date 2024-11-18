@@ -2,7 +2,6 @@ import { StyleSheet, Platform } from 'react-native';
 import { Surface, TextInput, Button, Snackbar } from 'react-native-paper';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { useState } from 'react';
-import { PlacesAutocompleteInput } from './PlacesAutocompleteInput';
 import { DatePickerInput } from './DatePickerInput';
 import { TimePickerInput } from './TimePickerInput';
 import { VehicleSelector } from './VehicleSelector';
@@ -20,15 +19,11 @@ const API_URL = Platform.select({
 
 interface DriverFormData {
   origin: string;
-  originPlaceId: string;
-  originLocation: any;
   destination: string;
-  destinationPlaceId: string;
-  destinationLocation: any;
   date: Date;
   time: string;
   vehicleId: string;
-  seats: number;
+  seats: string;
   distance?: string;
   duration?: string;
 }
@@ -45,6 +40,13 @@ export function DriverForm({ form, onFormChange }: DriverFormProps) {
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const router = useRouter();
 
+  const handleFieldChange = (field: string, value: any) => {
+    onFormChange({
+      ...form,
+      [field]: value
+    });
+  };
+
   const handleSubmit = () => {
     setShowConfirmation(true);
   };
@@ -57,7 +59,7 @@ export function DriverForm({ form, onFormChange }: DriverFormProps) {
       }
 
       const rideData = {
-        available_seats: parseInt(form.seats),
+        available_seats: parseInt(form.seats) || 1,
         vehicle_id: form.vehicleId,
         origin: form.origin,
         destination: form.destination,
@@ -85,28 +87,24 @@ export function DriverForm({ form, onFormChange }: DriverFormProps) {
       // Close the modal
       setShowConfirmation(false);
       
-      // Reset form
-      onFormChange({
-        origin: '',
-        originPlaceId: '',
-        originLocation: null,
-        destination: '',
-        destinationPlaceId: '',
-        destinationLocation: null,
-        date: new Date(),
-        time: '',
-        vehicleId: '',
-        seats: null,
-      });
-      
-      // Clear any existing errors
-      setError(null);
-      
-      // Add a small delay before navigation
-      setTimeout(() => {
-        // Make sure we're using the correct ID field from the response
-        router.push(`/rides/rides-awaiting?id=${data.data.ride_id}`);
-      }, 500);
+      // Reset form only after successful submission
+      if (data.status === 'ok') {
+        onFormChange({
+          origin: '',
+          destination: '',
+          date: new Date(),
+          time: '',
+          vehicleId: '',
+          seats: '',
+          distance: '',
+          duration: '',
+        });
+        
+        // Add a small delay before navigation
+        setTimeout(() => {
+          router.push(`/rides/rides-awaiting?id=${data.data.ride_id}`);
+        }, 500);
+      }
     } catch (error) {
       console.error('Error creating ride:', error);
       setError(error.message);
@@ -121,58 +119,40 @@ export function DriverForm({ form, onFormChange }: DriverFormProps) {
         style={styles.formContainer}
       >
         <Surface style={styles.form}>
-          <PlacesAutocompleteInput
+          <TextInput
+            mode="outlined"
             label="Origin"
             value={form.origin}
-            onPlaceSelect={(place) => {
-              onFormChange({
-                ...form,
-                origin: place.description,
-                originLocation: place.geometry.location,
-              });
+            onChangeText={(text) => {
+              handleFieldChange('origin', text);
             }}
+            style={styles.input}
           />
-          <PlacesAutocompleteInput
+          <TextInput
+            mode="outlined"
             label="Destination"
             value={form.destination}
-            onPlaceSelect={(place) => {
-              onFormChange({
-                ...form,
-                destination: place.description,
-                destinationLocation: place.geometry.location,
-              });
+            onChangeText={(text) => {
+              handleFieldChange('destination', text);
             }}
+            style={styles.input}
           />
           
-          {form.originLocation && form.destinationLocation && (
-            <RouteInfo
-              origin={form.originLocation}
-              destination={form.destinationLocation}
-              onRouteInfo={(distance, duration) => {
-                onFormChange({
-                  ...form,
-                  distance,
-                  duration,
-                });
-              }}
-            />
-          )}
-
           <DatePickerInput
             label="Date"
             value={form.date}
-            onChange={(date) => onFormChange({ ...form, date })}
+            onChange={(date) => handleFieldChange('date', date)}
             style={styles.input}
           />
           <TimePickerInput
             label="Time"
             value={form.time}
-            onChange={(time) => onFormChange({ ...form, time })}
+            onChange={(time) => handleFieldChange('time', time)}
             style={styles.input}
           />
           <VehicleSelector
             selectedVehicle={form.vehicleId}
-            onVehicleSelect={(vehicleId) => onFormChange({ ...form, vehicleId })}
+            onVehicleSelect={(vehicleId) => handleFieldChange('vehicleId', vehicleId)}
             style={styles.input}
           />
           <TextInput
@@ -183,7 +163,7 @@ export function DriverForm({ form, onFormChange }: DriverFormProps) {
               // Only allow numbers 1-9
               const numericValue = text.replace(/[^1-9]/g, '');
               if (numericValue.length <= 1) {
-                onFormChange({ ...form, seats: numericValue });
+                handleFieldChange('seats', numericValue);
               }
             }}
             keyboardType="numeric"

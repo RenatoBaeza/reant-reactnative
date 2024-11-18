@@ -5,20 +5,24 @@ import { useState } from "react";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+const initialFormState = {
+  origin: '',
+  destination: '',
+  date: new Date(),
+  time: '',
+  vehicleId: '',
+  seats: '',
+  distance: '',
+  duration: '',
+};
+
 export default function RidesCreate() {
   const router = useRouter();
-  const [driverForm, setDriverForm] = useState({
-    origin: '',
-    originPlaceId: '',
-    originLocation: null,
-    destination: '',
-    destinationPlaceId: '',
-    destinationLocation: null,
-    date: new Date(),
-    time: '',
-    vehicleId: '',
-    seats: null,
-  });
+  const [driverForm, setDriverForm] = useState(initialFormState);
+
+  const handleFormChange = (newForm) => {
+    setDriverForm(newForm);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -37,7 +41,7 @@ export default function RidesCreate() {
         </View>
         <DriverForm 
           form={driverForm}
-          onFormChange={setDriverForm}
+          onFormChange={handleFormChange}
         />
       </View>
     </SafeAreaView>

@@ -53,8 +53,8 @@ export function VehicleSelector({ selectedVehicle, onVehicleSelect, style }: Veh
       const data = await response.json();
       setVehicles(data.data || []);
       
-      // Select first vehicle by default if none selected
-      if (!selectedVehicle && data.data && data.data.length > 0) {
+      // Only select first vehicle if no vehicle is selected and we're mounting for the first time
+      if (!selectedVehicle && data.data && data.data.length > 0 && vehicles.length === 0) {
         onVehicleSelect(data.data[0].id);
       }
     } catch (err) {

@@ -1,7 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { Surface, TextInput, Button } from 'react-native-paper';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import { PlacesAutocompleteInput } from './PlacesAutocompleteInput';
 import { DatePickerInput } from './DatePickerInput';
 import { RouteInfo } from './RouteInfo';
 import { useRouter } from 'expo-router';
@@ -9,11 +8,7 @@ import { format } from 'date-fns';
 
 interface PassengerFormData {
   origin: string;
-  originPlaceId: string;
-  originLocation: any;
   destination: string;
-  destinationPlaceId: string;
-  destinationLocation: any;
   date: Date;
   distance?: string;
   duration?: string;
@@ -34,27 +29,29 @@ export function PassengerForm({ form, onFormChange }: PassengerFormProps) {
       style={styles.formContainer}
     >
       <Surface style={styles.form}>
-        <PlacesAutocompleteInput
+        <TextInput
+          mode="outlined"
           label="Origin"
           value={form.origin}
-          onPlaceSelect={(place) => {
+          onChangeText={(text) => {
             onFormChange({
               ...form,
-              origin: place.description,
-              originLocation: place.geometry.location,
+              origin: text,
             });
           }}
+          style={styles.input}
         />
-        <PlacesAutocompleteInput
+        <TextInput
+          mode="outlined"
           label="Destination"
           value={form.destination}
-          onPlaceSelect={(place) => {
+          onChangeText={(text) => {
             onFormChange({
               ...form,
-              destination: place.description,
-              destinationLocation: place.geometry.location,
+              destination: text,
             });
           }}
+          style={styles.input}
         />
         
         {form.originLocation && form.destinationLocation && (
