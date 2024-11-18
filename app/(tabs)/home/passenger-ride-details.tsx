@@ -28,7 +28,7 @@ const API_URL_CANCEL = Platform.select({
 interface SeatDetail {
   seat_id: string;
   seat_number: number;
-  seat_status: 'free' | 'taken' | 'pending';
+  seat_status: string;
   passenger_email: string | null;
 }
 
@@ -45,6 +45,7 @@ interface RideDetails {
   available_seats: number;
   ride_start_datetime: string;
   seats_details: SeatsDetails;
+  ride_status: 'awaiting' | 'confirmed' | 'active' | 'cancelled';
   vehicle_details?: {
     car_brand: string;
     car_model: string;
@@ -164,20 +165,22 @@ export default function PassengerRideDetails() {
     }
   };
 
-  const renderSeatItem = ({ item }: { item: SeatDetail }) => {
-    const getStatusColor = (status: string) => {
-      switch (status) {
-        case 'free':
-          return '#4CAF50'; // Green
-        case 'taken':
-          return '#FF5252'; // Red
-        case 'pending':
-          return '#FFC107'; // Yellow
-        default:
-          return '#666666'; // Gray
-      }
-    };
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'free':
+        return '#4CAF50'; // Green
+      case 'taken':
+        return '#FF5252'; // Red
+      case 'pending':
+        return '#FFC107'; // Yellow
+      case 'unfilled':
+        return '#666666'; // Gray
+      default:
+        return '#666666'; // Gray
+    }
+  };
 
+  const renderSeatItem = ({ item }: { item: SeatDetail }) => {
     const getStatusText = (status: string, passengerEmail: string | null) => {
       const isCurrentUser = passengerEmail === user?.emailAddresses[0].emailAddress;
       
@@ -188,13 +191,21 @@ export default function PassengerRideDetails() {
           return isCurrentUser ? 'Taken (By you)' : 'Taken';
         case 'pending':
           return isCurrentUser ? 'Pending (By you)' : 'Pending';
+        case 'unfilled':
+          return 'Unfilled';
         default:
           return 'Unknown';
       }
     };
 
     return (
-      <Surface style={styles.seatCard} elevation={1}>
+      <Surface 
+        style={[
+          styles.seatCard, 
+          item.seat_status === 'unfilled' && styles.unfilledSeat
+        ]} 
+        elevation={1}
+      >
         <Text variant="bodyLarge">Seat {item.seat_number}</Text>
         <Text 
           variant="bodyMedium" 
@@ -317,6 +328,19 @@ export default function PassengerRideDetails() {
           <Text variant="titleMedium">Capacity</Text>
           <Text variant="bodyMedium" style={styles.detail}>
             Available Seats: {ride.available_seats}
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text variant="titleMedium">Status</Text>
+          <Text 
+            variant="bodyMedium" 
+            style={[
+              styles.detail, 
+              { color: getStatusColor(ride.ride_status) }
+            ]}
+          >
+            {ride.ride_status.charAt(0).toUpperCase() + ride.ride_status.slice(1)}
           </Text>
         </View>
       </Surface>
@@ -514,5 +538,12 @@ const styles = StyleSheet.create({
   cancelButton: {
     marginTop: 24,
     backgroundColor: '#FF5252',
+  },
+  statusText: {
+    fontWeight: '500',
+    textTransform: 'capitalize',
+  },
+  unfilledSeat: {
+    backgroundColor: '#f5f5f5', // Light gray background for unfilled seats
   },
 });

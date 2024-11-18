@@ -44,6 +44,18 @@ const API_URL_CONFIRM = Platform.select({
   default: 'http://localhost:8000/rides/driver-confirms-ride',
 });
 
+const API_URL_START = Platform.select({
+  android: 'http://10.0.2.2:8000/rides/ride-start',
+  ios: 'http://localhost:8000/rides/ride-start',
+  default: 'http://localhost:8000/rides/ride-start',
+});
+
+const API_URL_COMPLETE = Platform.select({
+  android: 'http://10.0.2.2:8000/rides/ride-complete',
+  ios: 'http://localhost:8000/rides/ride-complete',
+  default: 'http://localhost:8000/rides/ride-complete',
+});
+
 interface SeatDetail {
   seat_id: string;
   seat_number: number;
@@ -64,6 +76,7 @@ interface RideDetails {
   available_seats: number;
   ride_start_datetime: string;
   seats_details: SeatsDetails;
+  ride_status: 'awaiting' | 'confirmed' | 'active' | 'cancelled' | 'complete';
   vehicle_details?: {
     car_brand: string;
     car_model: string;
@@ -83,6 +96,23 @@ const hasAnyTakenSeats = (seatsDetails: SeatsDetails): boolean => {
   return Object.values(seatsDetails).some(seat => seat.seat_status === 'taken');
 };
 
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'awaiting':
+      return '#FFC107'; // Yellow
+    case 'confirmed':
+      return '#4CAF50'; // Green
+    case 'active':
+      return '#2196F3'; // Blue
+    case 'cancelled':
+      return '#FF5252'; // Red
+    case 'unfilled':
+      return '#666666'; // Green
+    default:
+      return '#666666'; // Gray
+  }
+};
+
 export default function DriverRidesDetails() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
@@ -91,6 +121,7 @@ export default function DriverRidesDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCancelConfirmation, setShowCancelConfirmation] = useState(false);
+  const [showCompleteConfirmation, setShowCompleteConfirmation] = useState(false);
 
   useEffect(() => {
     console.log('Ride ID received:', id);
@@ -205,6 +236,74 @@ export default function DriverRidesDetails() {
     }
   };
 
+  const handleStartRide = async () => {
+    try {
+      const userEmail = user?.emailAddresses[0].emailAddress;
+      if (!userEmail) {
+        throw new Error('User email is required');
+      }
+
+      const response = await fetch(`${API_URL_START}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'user-email': userEmail,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to start ride');
+      }
+
+      const data = await response.json();
+      if (data.status === 'ok') {
+        await fetchRideDetails();
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } catch (err) {
+      console.error('Error starting ride:', err);
+      setError(err instanceof Error ? err.message : 'Failed to start ride');
+    }
+  };
+
+  const handleCompleteRide = async () => {
+    try {
+      const userEmail = user?.emailAddresses[0].emailAddress;
+      if (!userEmail) {
+        throw new Error('User email is required');
+      }
+
+      const response = await fetch(`${API_URL_COMPLETE}/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'user-email': userEmail,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Failed to complete ride');
+      }
+
+      const data = await response.json();
+      if (data.status === 'ok') {
+        await fetchRideDetails();
+      } else {
+        throw new Error('Invalid response from server');
+      }
+    } catch (err) {
+      console.error('Error completing ride:', err);
+      setError(err instanceof Error ? err.message : 'Failed to complete ride');
+    } finally {
+      setShowCompleteConfirmation(false);
+    }
+  };
+
   const renderSeatItem = ({ item }: { item: SeatDetail }) => {
     const getStatusColor = (status: string) => {
       switch (status) {
@@ -227,10 +326,14 @@ export default function DriverRidesDetails() {
           return 'Taken';
         case 'pending':
           return 'Pending';
+        case 'unfilled':
+          return 'Unfilled';
         default:
           return 'Unknown';
       }
     };
+
+    const canRemovePassenger = ride.ride_status !== 'active' && ride.ride_status !== 'complete';
 
     const handleAccept = async (seatId: string) => {
       try {
@@ -326,13 +429,15 @@ export default function DriverRidesDetails() {
               <Text variant="bodySmall" style={styles.passengerEmail}>
                 Passenger: {item.passenger_email}
               </Text>
-              <MaterialCommunityIcons 
-                name="account-remove" 
-                size={24} 
-                color="#FF5252"
-                onPress={() => handleRemovePassenger(item.seat_id)}
-                style={styles.removeIcon}
-              />
+              {canRemovePassenger && (
+                <MaterialCommunityIcons 
+                  name="account-remove" 
+                  size={24} 
+                  color="#FF5252"
+                  onPress={() => handleRemovePassenger(item.seat_id)}
+                  style={styles.removeIcon}
+                />
+              )}
             </View>
             {item.seat_status === 'pending' && (
               <View style={styles.actionButtons}>
@@ -437,6 +542,19 @@ export default function DriverRidesDetails() {
             Available Seats: {ride.available_seats}
           </Text>
         </View>
+
+        <View style={styles.section}>
+          <Text variant="titleMedium">Status</Text>
+          <Text 
+            variant="bodyMedium" 
+            style={[
+              styles.detail, 
+              { color: getStatusColor(ride.ride_status) }
+            ]}
+          >
+            {ride.ride_status.charAt(0).toUpperCase() + ride.ride_status.slice(1)}
+          </Text>
+        </View>
       </Surface>
 
       <View style={styles.seatsSection}>
@@ -450,7 +568,7 @@ export default function DriverRidesDetails() {
         />
       </View>
 
-      {hasAnyTakenSeats(ride.seats_details) && (
+      {hasAnyTakenSeats(ride.seats_details) && ride.ride_status === 'awaiting' && (
         <Button 
           mode="contained" 
           onPress={handleConfirmRide}
@@ -463,14 +581,40 @@ export default function DriverRidesDetails() {
         </Button>
       )}
 
-      <Button 
-        mode="contained" 
-        onPress={() => setShowCancelConfirmation(true)}
-        style={styles.cancelButton}
-        buttonColor="#FF5252"
-      >
-        Cancel Ride
-      </Button>
+      {ride.ride_status === 'confirmed' && (
+        <Button 
+          mode="contained" 
+          onPress={handleStartRide}
+          style={[styles.confirmButton, { backgroundColor: '#4CAF50' }]}
+          buttonColor="#4CAF50"
+          contentStyle={{ backgroundColor: '#4CAF50' }}
+          theme={{ colors: { primary: '#4CAF50' } }}
+        >
+          Start Ride
+        </Button>
+      )}
+
+      {ride.ride_status === 'active' ? (
+        <Button 
+          mode="contained" 
+          onPress={() => setShowCompleteConfirmation(true)}
+          style={[styles.confirmButton, { backgroundColor: '#4CAF50' }]}
+          buttonColor="#4CAF50"
+        >
+          Complete Ride
+        </Button>
+      ) : (
+        ride.ride_status !== 'complete' && (
+          <Button 
+            mode="contained" 
+            onPress={() => setShowCancelConfirmation(true)}
+            style={styles.cancelButton}
+            buttonColor="#FF5252"
+          >
+            Cancel Ride
+          </Button>
+        )
+      )}
 
       <Portal>
         <Modal
@@ -500,6 +644,40 @@ export default function DriverRidesDetails() {
                 buttonColor="#FF5252"
               >
                 Yes, Cancel
+              </Button>
+            </View>
+          </Surface>
+        </Modal>
+      </Portal>
+
+      <Portal>
+        <Modal
+          visible={showCompleteConfirmation}
+          onDismiss={() => setShowCompleteConfirmation(false)}
+          contentContainerStyle={styles.modalContainer}
+        >
+          <Surface style={styles.modalContent}>
+            <Text variant="headlineSmall" style={styles.modalTitle}>
+              Complete Ride
+            </Text>
+            <Text variant="bodyMedium" style={styles.modalText}>
+              Are you sure you want to complete this ride? This action cannot be undone.
+            </Text>
+            <View style={styles.modalButtons}>
+              <Button 
+                mode="outlined" 
+                onPress={() => setShowCompleteConfirmation(false)}
+                style={styles.modalButton}
+              >
+                No, Keep Active
+              </Button>
+              <Button 
+                mode="contained"
+                onPress={handleCompleteRide}
+                style={styles.modalButton}
+                buttonColor="#4CAF50"
+              >
+                Yes, Complete
               </Button>
             </View>
           </Surface>

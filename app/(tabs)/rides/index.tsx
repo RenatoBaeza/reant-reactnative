@@ -21,7 +21,7 @@ interface RideDetails {
   destination: string;
   available_seats: number;
   ride_start_datetime: string;
-  ride_status: 'awaiting' | 'confirmed' | 'active' | 'cancelled';
+  ride_status: 'awaiting' | 'confirmed' | 'active' | 'cancelled' | 'complete';
   seats_details: SeatsDetails;
   vehicle_details?: {
     car_brand: string;
@@ -82,12 +82,14 @@ export default function Rides() {
         const confirmedRides = data.data.filter(ride => ride.ride_status === 'confirmed');
         const activeRides = data.data.filter(ride => ride.ride_status === 'active');
         const cancelledRides = data.data.filter(ride => ride.ride_status === 'cancelled');
+        const completedRides = data.data.filter(ride => ride.ride_status === 'complete');
 
         setSections([
           { title: 'Awaiting Rides', data: awaitingRides },
           { title: 'Confirmed Rides', data: confirmedRides },
           { title: 'Active Rides', data: activeRides },
           { title: 'Cancelled Rides', data: cancelledRides },
+          { title: 'Completed Rides', data: completedRides },
         ]);
       }
     } catch (err) {
